@@ -15,7 +15,7 @@ class GASource extends DataSource {
 			'Email' => 'need-to-configure',	//google email address
 			'Passwd' => 'need-to-configure',
 			'service' => 'analytics',
-			'source' => 'Google-GAStats-AlliedHealthMedia.com-0.0.1',
+			'source' => 'Google-GAStats-0.0.1',
 		),
 		//Other config
 		'url-login' => 'https://www.google.com/accounts/ClientLogin',
