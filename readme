@@ -1,0 +1,17 @@
+Sample configuration for app/config/database.php
+
+
+public $gastats = array(
+		'datasource' => 'Gastats.GaSource',
+		'auth' => array(
+			'Email' => 'myemail@gmail.com',
+			'Passwd' => 'xxxxxxxx',
+			),
+		'ids' => 12345678, //default GA id used, others can be specified with custom stat_types
+		'stat_types' => array( //(optional) custom stat_types can be made here.  default types exisit in gastats_raw.php
+			'webstats' => array(
+				'ids' => 87654321,//id of differernt profile which has filtered content
+				),
+			),
+		'channels' => 'ChannelModelName/url_slug', //(optional if not using webchannels) model and field where webchannel urls are found in main apps database
+	);
