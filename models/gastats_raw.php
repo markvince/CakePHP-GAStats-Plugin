@@ -6,6 +6,10 @@ class Gastats extends GastatsAppModel {
 	protected $source = 'gastats';
 	protected $stats_data = array();
 	public $max_results = 1000;
+	public $errors = array();
+	
+	
+	/*Prdefined stat types.  Don't add ga: in front of the metrics/dimensions/filters (they will be added later)*/
 	public $stat_types = array(
 		'generic' => array(
 			'metrics' => array('pageviews'),
@@ -19,7 +23,12 @@ class Gastats extends GastatsAppModel {
 		'generic-notracking-noadmin' => array(
 			'metrics' => array('pageviews'),
 			'dimensions' => array('pagePath'),
-			'filters' => array('pagePath!@track_', 'pagePath!~%5E%2Fadmin.*', 'pagePath!~%5E%2Fapi.*'), 
+			'filters' => array('pagePath!@track_', 'pagePath!~^/admin.*', 'pagePath!~^/api.*'), 
+			),
+		'webads' => array(
+			'metrics' => array('pageviews'),
+			'dimensions' => array('pagePath'),
+			'filters' => array('pagePath=~^/track_.*'),
 			),
 		'webstats' => array(
 			'metrics' => array('pageviews','visitors','visits','timeOnSite'),
@@ -41,9 +50,14 @@ class Gastats extends GastatsAppModel {
 	/**
 	*
 	*/
-	public function purgeStats($start_date=null, $end_date=null) {
-		$conditions = array('start_date' => $start_date, 'end_date' => $end_date);
-		$this->deleteAll($conditions);
+	public function purgeStats($stat_type = null, $start_date=null, $end_date=null, $authorize=false) {
+		if ($stat_type == 'all' && $start_date == 'all' && $end_date = 'all' && $authorize) {
+			//this will remove all data from the table
+			$conditions = array('1');
+		} else {
+			$conditions = array('stat_type'=>$stat_type, 'start_date' => $start_date, 'end_date' => $end_date);	
+		}
+		return $this->deleteAll($conditions);
 	}
 	
 	/**
@@ -87,9 +101,13 @@ class Gastats extends GastatsAppModel {
 					}	
 				}	
 			}
-			$this->storeGAData('save', $stat_type, $start_date, $end_date);
+			if (!$this->errors()) {
+				//Purge old stats matching stat type and date range
+				$this->purgeStats($stat_type, $start_date, $end_date);
+				return $this->storeGAData('save', $stat_type, $start_date, $end_date);
+			}
 		}
-		return $this->stats_data;		
+		return false;	
 	}
 	
 	/**
@@ -103,7 +121,8 @@ class Gastats extends GastatsAppModel {
 					$savedata = array('start_date'=>$start_date, 'end_date' => $end_date, 'key' => $key, 'value' =>$val, 'stat_type'=>$stat_type);
 					$this->create();
 					if (!$this->save($savedata)) {
-						die("Error saving GA data. $stat_type $start_date $end_date");
+						$this->errors[] = "Error saving GA data. $stat_type $start_date $end_date";
+						return false;
 					}		
 				}
 			}
@@ -111,7 +130,7 @@ class Gastats extends GastatsAppModel {
 		} else {
 			//store gathered data in array while gathering more data
 			$entries = (isset($xml['feed']['entry']) ? $xml['feed']['entry'] : array());
-			if (in_array($stat_type, array('generic', 'generic-notracking', 'generic-notracking-noadmin'))) {
+			if (in_array($stat_type, array('webads','generic', 'generic-notracking', 'generic-notracking-noadmin'))) {
 				foreach ($entries as $data) {
 					if ($data['dxp:metric_attr']['name'] == 'ga:pageviews' && $data['dxp:metric_attr']['value']>0) {
 					 $key = $data['dxp:dimension_attr']['value'];
@@ -132,6 +151,8 @@ class Gastats extends GastatsAppModel {
 				}
 			}
 		}
+		
+		return true;
 	}
 	
 	//====================================
@@ -146,12 +167,25 @@ class Gastats extends GastatsAppModel {
 		$xml = null;
 		if(stripos($data,'xml')!==false) {
 			$xml = $this->xml2array($data); 
+		} else {
+			//possible error returned
+			$this->errors[] = $data;
 		}
 		return $xml;
 	}
 	
 	public function getStats() {
 		return $this->stats_data;
+	}
+	
+	public function errors($display=false) {
+		if (count($this->errors) > 0) {
+			if ($display) {
+				print_r($this->errors);
+			}
+			return true;
+		}
+		return false;
 	}
 }
 ?>
