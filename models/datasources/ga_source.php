@@ -21,7 +21,7 @@ class GASource extends DataSource {
 		'url-login' => 'https://www.google.com/accounts/ClientLogin',
 		'url-list-accounts' => 'https://www.google.com/analytics/feeds/accounts/default',
 		'url-report' => 'https://www.google.com/analytics/feeds/data',
-		'id'=>'need-to-configure',			//numeric id of profile to query 
+		'ids'=>'need-to-configure',			//numeric id of profile to query 
 		// other potentially configurable settings
 		//'modelLog' => 'GAApiLog',	//store url calls
 		//'modelData' => 'GAData',	//store aggregate data
@@ -56,7 +56,7 @@ class GASource extends DataSource {
 		foreach ($options as $key => $val) {
 			if (is_array($val)) {
 				foreach ($val as $valk=>$valv) {
-					if (in_array($key, array('dimensions', 'metrics', 'filters')) && strpos($valv, 'ga:') === false) {
+					if (in_array($key, array('ids','dimensions', 'metrics', 'filters')) && strpos($valv, 'ga:') === false) {
 						$val[$valk]='ga:'.$valv;
 					}
 				}
@@ -67,7 +67,7 @@ class GASource extends DataSource {
 					$query[$key] = implode(",",$val);
 				}
 			} else {
-				if (in_array($key, array('dimensions', 'metrics', 'filters')) && strpos($val, 'ga:') === false) {
+				if (in_array($key, array('ids','dimensions', 'metrics', 'filters')) && strpos($val, 'ga:') === false) {
 					$val = 'ga:'.$val;
 				}
 				$query[$key] = $val;
@@ -88,7 +88,9 @@ class GASource extends DataSource {
 		} elseif ($action == 'report') {
 			$request_url = $this->config['url-report'];
 			$query['authkey']=$this->authkey;
-			$query['ids'] = 'ga:'.$this->config['id'];
+			if (!isset($query['ids'])) {
+				$query['ids'] ='ga:'.$this->config['ids'];	
+			}			
 			$requestOptions['header'] = $this->authHeader;
 		} elseif ($action == 'list-accounts') {
 			//list accounts

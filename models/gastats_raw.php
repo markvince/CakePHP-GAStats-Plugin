@@ -1,13 +1,13 @@
 <?php
 
-class Gastats extends GastatsAppModel {
-	public $name = "Gastats";
-	public $useTable = "gastats";
-	protected $source = 'gastats';
+class GastatsRaw extends GastatsAppModel {
+	public $name = "GastatsRaw";
+	public $useTable = "gastats_raws";
 	protected $stats_data = array();
-	public $max_results = 1000;
+	public $max_results = 5000;
+	protected $results_cap = 10000;
 	public $errors = array();
-	
+	public $page_path = '';
 	
 	/*Prdefined stat types.  Don't add ga: in front of the metrics/dimensions/filters (they will be added later)*/
 	public $stat_types = array(
@@ -34,6 +34,11 @@ class Gastats extends GastatsAppModel {
 			'metrics' => array('pageviews','visitors','visits','timeOnSite'),
 			'dimensions' => array('year'),
 			),
+		'webchannels' => array(
+			'metrics' => array('pageviews','uniquePageviews','timeOnpage','exits'),
+			'dimensions' => array('pagePath'),
+			'filters' => array(), //dynamically set at run time
+			),
 		);
 	
 	/**
@@ -48,12 +53,24 @@ class Gastats extends GastatsAppModel {
 	}
 	
 	/**
+	* Query gastats_raws table
+	*
+	*/
+	public function getStats($stat_type=null,$start_date=null,$end_date=null) {
+		$conditions = compact('stat_type','start_date','end_date');
+		return $this->find('all',compact('conditions'));
+	}
+	
+	/**
 	*
 	*/
 	public function purgeStats($stat_type = null, $start_date=null, $end_date=null, $authorize=false) {
 		if ($stat_type == 'all' && $start_date == 'all' && $end_date = 'all' && $authorize) {
 			//this will remove all data from the table
 			$conditions = array('1');
+		} elseif ($stat_type == 'all' && $start_date == 'all' && $end_date = 'all') {
+			$this->errors[] = 'Missing authorization.  Stats not purged.';
+			return false;
 		} else {
 			$conditions = array('stat_type'=>$stat_type, 'start_date' => $start_date, 'end_date' => $end_date);	
 		}
@@ -66,18 +83,27 @@ class Gastats extends GastatsAppModel {
 	public function getGAData($stat_type=null, $start_date=null, $end_date=null, $paginate=false, $options = array()) {
 		$this->loadGA();
 		$this->stats_data = null;
+		$this->stat_types = (isset($this->GoogleAnalytics->config['stat_types']) ? set::merge($this->stat_types, $this->GoogleAnalytics->config['stat_types']) : $this->stat_types);
 		if(!empty($start_date) && !empty($end_date)) {
 			if (!empty($stat_type)) {
-				$options = array_merge($this->stat_types[$stat_type], $options);				
+				$options = array_merge($this->stat_types[$stat_type], $options); //add/replace stat_type parameters				
 			}
 			$options['start-date'] = $start_date;
 			$options['end-date'] = $end_date;
 			$options['max-results'] = (isset($options['max-results']) ? $options['max-results'] : $this->max_results);
+			if ($options['max-results'] >= $this->results_cap) {
+				$this->errors[] = "Maximum allowed results of $this->results_cap exceeded: ".$options['max-results'];
+				return false;
+			}
+			if (!empty($this->page_path)) {
+				$options['filters'] = set::merge($options['filters'],array('pagePath=~^/'.$this->page_path.'/?$'));
+			}
+			
 			$response = $this->GoogleAnalytics->report($options);
 			
 			$xml = $this->parseGAData($response);
 			if (isset($xml['feed']['entry']) && is_array($xml['feed']['entry'])) {
-				$num_entries =  count($xml['feed']['entry']);
+				$num_entries = count($xml['feed']['entry']);
 				if ($num_entries > 0) {
 					$this->storeGAData($xml,$stat_type,$start_date,$end_date);
 					$page_count = 1;
@@ -103,7 +129,9 @@ class Gastats extends GastatsAppModel {
 			}
 			if (!$this->errors()) {
 				//Purge old stats matching stat type and date range
-				$this->purgeStats($stat_type, $start_date, $end_date);
+				if ($stat_type != 'webchannels') {
+					$this->purgeStats($stat_type, $start_date, $end_date);	
+				}
 				return $this->storeGAData('save', $stat_type, $start_date, $end_date);
 			}
 		}
@@ -114,8 +142,8 @@ class Gastats extends GastatsAppModel {
 	*
 	*/
 	function storeGAData ($xml=null, $stat_type=null, $start_date=null, $end_date=null) {
-		
 		if ($xml == 'save' && !empty($stat_type) && !empty($start_date) && !empty($end_date)) {
+			$this->stats_data = (is_array($this->stats_data) ? $this->stats_data : array());
 			foreach ($this->stats_data as $stat_type => $stat_details) {
 				foreach ($stat_details as $key =>$val) {
 					$savedata = array('start_date'=>$start_date, 'end_date' => $end_date, 'key' => $key, 'value' =>$val, 'stat_type'=>$stat_type);
@@ -142,11 +170,17 @@ class Gastats extends GastatsAppModel {
 					 }
 					}	
 				} 
-			}	
-			elseif (in_array($stat_type, array('webstats'))) {
+			} elseif (strpos($stat_type,'webstats') !== false) {
 				$attr = 0;
 				foreach ($this->stat_types[$stat_type]['metrics'] as $metric) {
 					$this->stats_data[$stat_type][$metric] = $entries['dxp:metric'][$attr.'_attr']['value'];
+					$attr++;
+				}
+			} elseif (strpos($stat_type,'webchannels') !== false) {
+				//should only be one result per channel
+				$attr = 0;
+				foreach ($this->stat_types[$stat_type]['metrics'] as $metric) {
+					$this->stats_data[$stat_type][$this->page_path.'|'.$metric] = $entries['dxp:metric'][$attr.'_attr']['value'];
 					$attr++;
 				}
 			}
@@ -156,12 +190,6 @@ class Gastats extends GastatsAppModel {
 	}
 	
 	//====================================
-	
-	public function loadGA() {
-		App::import('Core','ConnectionManager');
-		$this->GoogleAnalytics = ConnectionManager::getDataSource($this->source);
-		$this->GoogleAnalytics->login();
-	}
 	
 	function parseGAData($data) {
 		$xml = null;
@@ -173,11 +201,7 @@ class Gastats extends GastatsAppModel {
 		}
 		return $xml;
 	}
-	
-	public function getStats() {
-		return $this->stats_data;
-	}
-	
+		
 	public function errors($display=false) {
 		if (count($this->errors) > 0) {
 			if ($display) {

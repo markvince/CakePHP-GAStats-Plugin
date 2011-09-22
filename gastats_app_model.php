@@ -3,7 +3,16 @@
 class GastatsAppModel extends AppModel {
 	
 	public $GoogleAnalytics = null;
-		
+	public $source = 'gastats';
+	
+	public function loadGA($login=true) {
+		App::import('Core','ConnectionManager');
+		$this->GoogleAnalytics = ConnectionManager::getDataSource($this->source);
+		if ($login) {
+			$this->GoogleAnalytics->login();	
+		}
+	}
+	
 	public function xml2array($contents, $get_attributes = 1, $priority = 'tag') {
     if (!function_exists('xml_parser_create')) {
         return array ();
