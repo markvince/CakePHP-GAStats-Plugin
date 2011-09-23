@@ -8,6 +8,7 @@ class GastatsRaw extends GastatsAppModel {
 	protected $results_cap = 10000;
 	public $errors = array();
 	public $page_path = '';
+	public $stat_type = 'generic-notracking-noadmin';
 	
 	/*Prdefined stat types.  Don't add ga: in front of the metrics/dimensions/filters (they will be added later)*/
 	public $stat_types = array(
@@ -25,20 +26,28 @@ class GastatsRaw extends GastatsAppModel {
 			'dimensions' => array('pagePath'),
 			'filters' => array('pagePath!@track_', 'pagePath!~^/admin.*', 'pagePath!~^/api.*'), 
 			),
+		//-------
 		'webads' => array(
 			'metrics' => array('pageviews'),
 			'dimensions' => array('pagePath'),
 			'filters' => array('pagePath=~^/track_.*'),
 			),
+		//-------
 		'webstats' => array(
-			'metrics' => array('pageviews','visitors','visits','timeOnSite'),
+			'metrics' => array('pageviews','visitors','visits','timeOnSite', 'avgTimeOnSite'),
 			'dimensions' => array('year'),
 			),
+		//-------
 		'webchannels' => array(
-			'metrics' => array('pageviews','uniquePageviews','timeOnpage','exits'),
+			'metrics' => array('pageviews','uniquePageviews','timeOnpage', 'avgTimeOnPage','exits'),
 			'dimensions' => array('pagePath'),
-			'filters' => array(), //dynamically set at run time
+			'filters' => array(), //dynamically set at run time via $this->page_path, requires 'channels' data in database.php
 			),
+		//-------
+		'country' => array(
+			'metrics' => array('visits'),
+			'dimensions' => array('country'),
+			)
 		);
 	
 	/**
@@ -50,6 +59,15 @@ class GastatsRaw extends GastatsAppModel {
 			$this->GoogleAnalytics->config = set::merge($this->GoogleAnalytics->config, $config);
 		}
 		return $this->GoogleAnalytics->config;
+	}
+	
+	/**
+	*
+	*
+	*/
+	public function processGAStats($start_date=null,$end_date=null) {
+		//run defaults
+		return $this->getGAData($this->stat_type, $start_date, $end_date, true);
 	}
 	
 	/**
@@ -147,6 +165,7 @@ class GastatsRaw extends GastatsAppModel {
 			foreach ($this->stats_data as $stat_type => $stat_details) {
 				foreach ($stat_details as $key =>$val) {
 					$savedata = array('start_date'=>$start_date, 'end_date' => $end_date, 'key' => $key, 'value' =>$val, 'stat_type'=>$stat_type);
+					//debug($savedata);
 					$this->create();
 					if (!$this->save($savedata)) {
 						$this->errors[] = "Error saving GA data. $stat_type $start_date $end_date";
@@ -158,25 +177,28 @@ class GastatsRaw extends GastatsAppModel {
 		} else {
 			//store gathered data in array while gathering more data
 			$entries = (isset($xml['feed']['entry']) ? $xml['feed']['entry'] : array());
-			if (in_array($stat_type, array('webads','generic', 'generic-notracking', 'generic-notracking-noadmin'))) {
+			if (in_array($stat_type, array('country','webads','generic', 'generic-notracking', 'generic-notracking-noadmin'))) {
+				//store single metric value for single dimension
 				foreach ($entries as $data) {
-					if ($data['dxp:metric_attr']['name'] == 'ga:pageviews' && $data['dxp:metric_attr']['value']>0) {
-					 $key = $data['dxp:dimension_attr']['value'];
-					 $value = $data['dxp:metric_attr']['value'];
+					if (in_array($data['dxp:metric_attr']['name'],array('ga:pageviews','ga:visits')) && $data['dxp:metric_attr']['value']>0) {
+						 $key = $data['dxp:dimension_attr']['value'];
+						 $value = $data['dxp:metric_attr']['value'];
 					 if (isset($this->stats_data[$key])) {
 						 $this->stats_data[$stat_type][$key] = $this->stats_data[$key] + $value;
 					 } else {
 						 $this->stats_data[$stat_type][$key] = $value;
 					 }
 					}	
-				} 
+				}
 			} elseif (strpos($stat_type,'webstats') !== false) {
+				//store multiple metrics for site 
 				$attr = 0;
 				foreach ($this->stat_types[$stat_type]['metrics'] as $metric) {
 					$this->stats_data[$stat_type][$metric] = $entries['dxp:metric'][$attr.'_attr']['value'];
 					$attr++;
 				}
 			} elseif (strpos($stat_type,'webchannels') !== false) {
+				//store multiple metrics for specified page path
 				//should only be one result per channel
 				$attr = 0;
 				foreach ($this->stat_types[$stat_type]['metrics'] as $metric) {

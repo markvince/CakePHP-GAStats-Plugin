@@ -74,7 +74,7 @@ class GASource extends DataSource {
 			}
 			
 		}
-		//debug($query); die();
+		//debug($query);
 		return $this->request('report', $query);
 	}
 	
