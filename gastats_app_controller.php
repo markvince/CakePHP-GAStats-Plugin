@@ -1,6 +1,6 @@
 <?php
 
-class AdobeConnectAppController extends AppController {
+class GastatsAppController extends AppController {
 
 }
 

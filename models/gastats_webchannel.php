@@ -12,11 +12,19 @@ Class GastatsWebchannel extends GastatsAppModel {
 		if (isset($this->GoogleAnalytics->config['channels'])) {
 			$config = explode('/',$this->GoogleAnalytics->config['channels']);
 			$model = $config[0];
-			$field = $config[1];
+			$fields = $config[1];
+			$active = (isset($config[2]) ? explode(':',$config[2]) : null);
+			if (!is_null($active)) {
+				$is_active = $active[0].' = '.$active[1];
+			}
+			
 			//Load model and get list of channel urls
 			$CM = ClassRegistry::init($model);
-			$channels = $CM->find('list',array('conditions'=>array($field.' <> ""')
-				,'fields' => $field));
+			$conditions=array($fields.' <> ""');
+			if (isset($is_active)) {
+					$conditions[] = $is_active;
+			}
+			$channels = $CM->find('list',compact('conditions','fields'));
 			if ($refresh) {
 				$GastatsRaw->purgeStats($stat_type,$start_date,$end_date); //remove data collected from GA
 				$this->purgeWebchannelStats($start_date,$end_date);			//remove aggregate data

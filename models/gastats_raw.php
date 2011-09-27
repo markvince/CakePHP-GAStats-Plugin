@@ -9,6 +9,7 @@ class GastatsRaw extends GastatsAppModel {
 	public $errors = array();
 	public $page_path = '';
 	public $stat_type = 'generic-notracking-noadmin';
+	protected $metric_count = 0;
 	
 	/*Prdefined stat types.  Don't add ga: in front of the metrics/dimensions/filters (they will be added later)*/
 	public $stat_types = array(
@@ -116,7 +117,7 @@ class GastatsRaw extends GastatsAppModel {
 			if (!empty($this->page_path)) {
 				$options['filters'] = set::merge($options['filters'],array('pagePath=~^/'.$this->page_path.'/?$'));
 			}
-			
+			$this->metric_count = count($options['metrics']);//will define how the data is stored
 			$response = $this->GoogleAnalytics->report($options);
 			
 			$xml = $this->parseGAData($response);
@@ -177,10 +178,21 @@ class GastatsRaw extends GastatsAppModel {
 		} else {
 			//store gathered data in array while gathering more data
 			$entries = (isset($xml['feed']['entry']) ? $xml['feed']['entry'] : array());
-			if (in_array($stat_type, array('country','webads','generic', 'generic-notracking', 'generic-notracking-noadmin'))) {
+			if (strpos($stat_type,'webchannels') !== false && $this->metric_count > 1) {
+				//store multiple metrics for specified page path
+				//should only be one result per channel
+				$attr = 0;
+				foreach ($this->stat_types[$stat_type]['metrics'] as $metric) {
+					$this->stats_data[$stat_type][$this->page_path.'|'.$metric] = $entries['dxp:metric'][$attr.'_attr']['value'];
+					$attr++;
+				}
+			}
+			//if (in_array($stat_type, array('country','webads','generic', 'generic-notracking', 'generic-notracking-noadmin'))) {
+			elseif ($this->metric_count == 1) {
 				//store single metric value for single dimension
 				foreach ($entries as $data) {
-					if (in_array($data['dxp:metric_attr']['name'],array('ga:pageviews','ga:visits')) && $data['dxp:metric_attr']['value']>0) {
+					//if (in_array($data['dxp:metric_attr']['name'],array('ga:pageviews','ga:visits')) && $data['dxp:metric_attr']['value']>0) {
+					if ($data['dxp:metric_attr']['value']>0) {
 						 $key = $data['dxp:dimension_attr']['value'];
 						 $value = $data['dxp:metric_attr']['value'];
 					 if (isset($this->stats_data[$key])) {
@@ -190,19 +202,12 @@ class GastatsRaw extends GastatsAppModel {
 					 }
 					}	
 				}
-			} elseif (strpos($stat_type,'webstats') !== false) {
+			//} elseif (strpos($stat_type,'webstats') !== false) {
+			} elseif ($this->metric_count > 1) {
 				//store multiple metrics for site 
 				$attr = 0;
 				foreach ($this->stat_types[$stat_type]['metrics'] as $metric) {
 					$this->stats_data[$stat_type][$metric] = $entries['dxp:metric'][$attr.'_attr']['value'];
-					$attr++;
-				}
-			} elseif (strpos($stat_type,'webchannels') !== false) {
-				//store multiple metrics for specified page path
-				//should only be one result per channel
-				$attr = 0;
-				foreach ($this->stat_types[$stat_type]['metrics'] as $metric) {
-					$this->stats_data[$stat_type][$this->page_path.'|'.$metric] = $entries['dxp:metric'][$attr.'_attr']['value'];
 					$attr++;
 				}
 			}
