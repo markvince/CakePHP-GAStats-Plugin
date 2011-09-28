@@ -78,6 +78,44 @@ class GastatsAd extends GastatsAppModel {
 		$this->deleteAll($conditions);
 	}
 	
+	/**
+	*
+	*/
+	public function getAds($corp_id=0, $start_date=null, $end_date=null) {
+		if ($corp_id == 0) {
+			$conditions = compact('start_date','end_date');
+		} else {
+			$conditions = compact('corp_id','start_date','end_date');
+		}
+		
+		$ads_array = $this->find('all',compact('conditions'));
+		$ads = array();
+		$corps=array();
+		//prep data for display
+		foreach ($ads_array as $ad) {
+			$ad = $ad['GastatsAd'];
+			$ads['unique'][$ad['ad_id']][$ad['location']][$ad['ad_slot']][$ad['ad_stat_type']] = $ad['value'];
+			$corps[$ad['ad_id']] = $ad['corp_id'];
+			//breakdown
+			//Total by stat type only (click/view)
+			if (isset($ads['group'][$ad['ad_id']][$ad['ad_stat_type']])) {
+				$ads['group'][$ad['ad_id']][$ad['ad_stat_type']]['total'] += $ad['value'];
+			} else {
+				$ads['group'][$ad['ad_id']][$ad['ad_stat_type']]['total'] = $ad['value'];
+				$ads['group'][$ad['ad_id']]['ad_stat_types'][$ad['ad_stat_type']] = 1;
+			}
+			//Total by location and ad stat type
+			if (isset($ads['group'][$ad['ad_id']][$ad['ad_stat_type']][$ad['location']]['total'])) {
+				$ads['group'][$ad['ad_id']][$ad['ad_stat_type']][$ad['location']]['total'] += $ad['value'];
+			} else {
+				$ads['group'][$ad['ad_id']][$ad['ad_stat_type']][$ad['location']]['total'] = $ad['value'];
+				$ads['group'][$ad['ad_id']]['ad_locations'][$ad['location']] = 1;
+			}
+			
+		}
+		return compact('corp_id','start_date','end_date','ads','corps');
+	}
+	
 	
 }
 ?>

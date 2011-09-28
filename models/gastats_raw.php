@@ -238,5 +238,25 @@ class GastatsRaw extends GastatsAppModel {
 		}
 		return false;
 	}
+	
+	//======================================
+	
+	public function getContent($start_date=null, $end_date=null, $limit=null, $path='', $wildcard=false) {
+		//Get 'generic' stat type
+		$stat_type = $this->stat_type;
+		if (!is_null($start_date) && !is_null($end_date)) {
+			$conditions = compact('start_date', 'end_date','stat_type');
+		} else {
+			$conditions = compact('stat_type');
+		}
+		$wildcard = ($wildcard ? '%' : '');
+		if (!empty($path)) {
+			$conditions['GastatsRaw.key LIKE'] = "$path$wildcard";
+		}
+		$order = 'GastatsRaw.start_date ASC, GastatsRaw.key ASC';
+		$content = $this->find('all',compact('conditions','order','limit'));
+		return $content;
+		
+	}
 }
 ?>

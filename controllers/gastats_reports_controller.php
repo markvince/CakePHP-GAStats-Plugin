@@ -1,8 +1,10 @@
 <?php
 class GastatsReportsController extends GastatsAppController {
+	var $name = "GastatsReports";
 	var $uses = array('Gastats.GastatsAd','Gastats.GastatsCountry',
 		'Gastats.GastatsWebchannel','Gastats.GastatsWebstat','Gastats.GastatsRaw',
 		);
+	//var $layout = 'blank';
 	public $metrics = array(
 		'avgTimeOnPage' => array('display'=>true,'header' => 'Avg Time On Page (h:m:s)','uom'=>'time'),
 			'exists' => array('display'=>false,'header' => 'Exits',),
@@ -16,9 +18,15 @@ class GastatsReportsController extends GastatsAppController {
 			);
 	
 	public function index() {
-		
+		die();
 	}
 	
+	/**
+	* Query and display ad records by corp_id and date range.
+	* @param corp_id
+	* @param start_date
+	* @param end_date
+	*/
 	public function ads($corp_id=0,$start_date=null,$end_date=null) {
 		if ($corp_id == 0) {
 			$conditions = compact('start_date','end_date');
@@ -54,6 +62,12 @@ class GastatsReportsController extends GastatsAppController {
 		$this->set(compact('corp_id','start_date','end_date','ads','corps'));
 	}
 	
+	/**
+	* Query and display webchannel records by corp_id and date range.
+	* @param corp_id
+	* @param start_date
+	* @param end_date
+	*/
 	public function webchannels ($corp_id=0,$start_date=null,$end_date=null) {		
 		if ($corp_id == 0) {
 			$conditions = compact('start_date','end_date');
@@ -81,6 +95,11 @@ class GastatsReportsController extends GastatsAppController {
 		
 	}
 	
+	/**
+	* Query and display site-wide stats by date range.
+	* @param start_date
+	* @param end_date
+	*/
 	public function webstats($start_date=null,$end_date=null) {
 		$conditions = compact('start_date','end_date');
 		$order = 'metric ASC';
@@ -108,6 +127,11 @@ class GastatsReportsController extends GastatsAppController {
 		$this->set(compact('start_date','end_date','stats'));
 	}
 	
+	/**
+	* Query and display country visit stats date range.
+	* @param start_date
+	* @param end_date
+	*/
 	public function countries($start_date=null,$end_date=null, $limit=null) {
 		$conditions = compact('start_date','end_date');
 		$conditions[] = 'country <> "(not set)"'; //GA result with no set country name
@@ -119,6 +143,102 @@ class GastatsReportsController extends GastatsAppController {
 		}
 		$this->set(compact('start_date','end_date','countries'));
 	}
+	
+	/**
+	* Query Raw data by date and/or path, will display path and page views
+	* @param start_date
+	* @param end_date
+	* path (optional) - will query with 'like' match
+	* wildcard (optional) - if true then will add wildcard % to end of path
+	*/
+	public function content($start_date=null, $end_date=null, $limit=null) {
+		if (isset($this->params['url']['path'])) {
+			$path = urldecode($this->params['url']['path']);
+		} else {
+			$path = '';
+		}	
+		//Check for wildcard
+		if (isset($this->params['url']['wildcard']) && $this->params['url']['wildcard'] == true) {
+			$wildcard = true;
+		}
+		
+		if (!empty($path)) {
+			$conditions['GastatsRaw.key LIKE'] = "$path$wildcard";
+		}
+		$content_array = $this->GastatsRaw->getContent($start_date, $end_date, $limit, $path, $wildcard);
+		$contents = array();
+		foreach ($content_array as $item) {
+			$contents[$item['key']] = $item['value'];
+		}
+		
+		$this->set(compact('start_date','end_date','contents'));
+	}
+	
+	/**
+	* @param content_type_slug - content_type-slug //articles-my-article-xxyy
+	* 
+	*/
+	public function contentBySlug($content_type_slug, $start_date=null, $end_date=null) {
+		$content_type_slug = explode("-",$content_type_slug);
+		$content_type = array_shift($content_type_slug);
+		$slug = (isset($content_type_slug[0]) ? implode("-",$content_type_slug) : '');
+		$wildcard=false;
+		if (isset($this->params['url']['wildcard']) && $this->params['url']['wildcard'] == true) {
+			$wildcard = true;
+		}
+		if ($wildcard == false && empty($slug)) {
+			$wildcard = true;
+		}
+		$contents_array = $this->GastatsRaw->getContent($start_date, $end_date, null, "/$content_type/$slug", $wildcard);
+		
+		foreach ($contents_array as $item) {
+			$item = $item['GastatsRaw'];
+			$path = explode("?",$item['key']);
+			$path = $path[0];
+			if (isset($contents[$path])) {
+				$contents[$path] += $item['value'];
+			} else {
+				$contents[$path] = $item['value'];	
+			}
+			
+		}
+		
+		$this->set(compact('start_date','end_date','contents'));
+		$this->render('content');
+	}
+	
+	/**
+	* @param content_id - id at end of slug
+	* 
+	*/
+	public function contentById($content_id, $start_date=null, $end_date=null) {
+		$content_id = explode("-",$content_id);
+		$content_type = '';
+		if (count($content_id) == 2) {
+			$content_type = array_shift($content_id);
+			$content_type = "/$content_type/";
+		}
+		$content_id = array_shift($content_id);
+		$slug = "$content_type%-$content_id";
+		$contents_array = $this->GastatsRaw->getContent($start_date, $end_date, null, "$slug", false);
+				
+		foreach ($contents_array as $item) {
+			$item = $item['GastatsRaw'];
+			$path = explode("?",$item['key']);
+			$path = $path[0];
+			if (isset($contents[$path])) {
+				$contents[$path] += $item['value'];
+			} else {
+				$contents[$path] = $item['value'];	
+			}
+			
+		}
+		
+		$this->set(compact('start_date','end_date','contents'));
+		$this->render('content');
+		
+	}
+	
 	
 	// -------------------
 	
