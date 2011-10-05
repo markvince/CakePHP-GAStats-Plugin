@@ -68,6 +68,32 @@ Class GastatsWebchannel extends GastatsAppModel {
 	function purgeWebchannelStats($start_date,$end_date) {
 		$this->deleteAll(compact('start_date', 'end_date'));
 	}
+	
+	function getWebchannels($corp_id, $start_date, $end_date) {
+		if ($corp_id == 0) {
+			$conditions = compact('start_date','end_date');
+		} else {
+			$conditions = compact('corp_id','start_date','end_date');
+		}
+		$order = 'channel ASC, metric ASC';
+		$channels_array = $this->find('all',compact('conditions','order'));
+		foreach ($channels_array as $webchannel) {
+			$webchannel = $webchannel['GastatsWebchannel'];
+			if (isset($this->metrics[$webchannel['metric']]) && $this->metrics[$webchannel['metric']]['display'] == true) {
+				$webchannels[$webchannel['corp_id']]['channel'] = $webchannel['channel'];
+				if (isset($this->metrics[$webchannel['metric']]['uom'])) {
+					if (in_array($this->metrics[$webchannel['metric']]['uom'],array('time'))) {
+						//GA defaults to seconds, convert to hms
+						$webchannels[$webchannel['corp_id']]['metrics'][$this->metrics[$webchannel['metric']]['header']] = $this->_secondsDisplay($webchannel['value'],$this->metrics[$webchannel['metric']]['uom']);
+					}
+				} else {
+						$webchannels[$webchannel['corp_id']]['metrics'][$this->metrics[$webchannel['metric']]['header']] = $webchannel['value'];		
+				}	
+			}
+		}
+		
+		return $webchannels;
+	}
 }
 
 ?>

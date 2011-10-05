@@ -22,9 +22,9 @@ class GastatsAd extends GastatsAppModel {
 		//0 - track_banner_view
 		//1 - GEN
 		//2 - ABC (sponsor)
-		//3 - 42 (corp_id)
+		//3 - 42 (ad_id)
 		//4 - img (type of banner)
-		//5 - 71 (ad_id)
+		//5 - 71 (corp_id)
 		//6 - cp_banner_600x154?ref=... (banner location and page banner was on) 
 		$agstats = array();
 		foreach ($stats as $stat) {
@@ -38,16 +38,16 @@ class GastatsAd extends GastatsAppModel {
 				array_shift($urla);
 			}
 			if ($urla[0] == "track_banner_click") {
-				if(isset($agstats['click'][$urla[1]][$urla[3]][$urla[5]][$urla[6]])) {
-						$agstats['click'][$urla[1]][$urla[3]][$urla[5]][$urla[6]] += $stat['value'];
+				if(isset($agstats['click'][$urla[1]][$urla[5]][$urla[3]][$urla[6]])) {
+						$agstats['click'][$urla[1]][$urla[5]][$urla[3]][$urla[6]] += $stat['value'];
 				} else {
-					$agstats['click'][$urla[1]][$urla[3]][$urla[5]][$urla[6]] = $stat['value'];
+					$agstats['click'][$urla[1]][$urla[5]][$urla[3]][$urla[6]] = $stat['value'];
 				}
 			} else if ($urla[0] == "track_banner_view") {
-				if(isset($agstats['view'][$urla[1]][$urla[3]][$urla[5]][$urla[6]])) {
-						$agstats['view'][$urla[1]][$urla[3]][$urla[5]][$urla[6]] += $stat['value'];
+				if(isset($agstats['view'][$urla[1]][$urla[5]][$urla[3]][$urla[6]])) {
+						$agstats['view'][$urla[1]][$urla[5]][$urla[3]][$urla[6]] += $stat['value'];
 				} else {
-					$agstats['view'][$urla[1]][$urla[3]][$urla[5]][$urla[6]] = $stat['value'];
+					$agstats['view'][$urla[1]][$urla[5]][$urla[3]][$urla[6]] = $stat['value'];
 				}
 			}
 		}

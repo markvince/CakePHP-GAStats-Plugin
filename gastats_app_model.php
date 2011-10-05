@@ -4,6 +4,18 @@ class GastatsAppModel extends AppModel {
 	
 	public $GoogleAnalytics = null;
 	public $source = 'gastats';
+	public $metrics = array(
+		'avgTimeOnPage' => array('display'=>true,'header' => 'Avg Time On Page (h:m:s)','uom'=>'time'),
+			'exists' => array('display'=>false,'header' => 'Exits',),
+			'pageviews' => array('display'=>true,'header' => 'Page Views',),
+			'timeOnpage' => array('display'=>false,'header' => 'Time On Page',),
+			'uniquePageviews' => array('display'=>true,'header' => 'Unique Page Views',),
+			'avgTimeOnSite' => array('display'=>true,'header' => 'Avg Time On Site (h:m:s)','uom'=>'time'),
+			'timeOnSite' => array('display'=>false,'header' => 'Time On Site (h:m:s)','uom'=>'time'),
+			'visitors' => array('display'=>true,'header' => 'Visitors',),
+			'visits' => array('display'=>true,'header' => 'Visits',),
+			);
+	
 	
 	public function loadGA($login=true) {
 		App::import('Core','ConnectionManager');
@@ -11,6 +23,16 @@ class GastatsAppModel extends AppModel {
 		if ($login) {
 			$this->GoogleAnalytics->login();	
 		}
+	}
+	
+	function _secondsDisplay($sec) {
+		$hour = intval($sec/3600); //hours = 3600 per hour
+		$min = intval(($sec/60)%60);	   //minutes = 60 sec per minute, then take remainder not used up by the hours 
+		$sec = intval($sec%60);
+		$hour = str_pad($hour,2,"0",STR_PAD_LEFT);
+		$min = str_pad($min,2,"0",STR_PAD_LEFT);
+		$sec = str_pad($sec,2,"0",STR_PAD_LEFT);
+		return "$hour:$min:$sec";
 	}
 	
 	public function xml2array($contents, $get_attributes = 1, $priority = 'tag') {
