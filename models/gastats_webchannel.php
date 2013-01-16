@@ -75,6 +75,7 @@ Class GastatsWebchannel extends GastatsAppModel {
 		} else {
 			$conditions = compact('corp_id','start_date','end_date');
 		}
+		$webchannels = array();
 		$order = 'channel ASC, metric ASC';
 		$channels_array = $this->find('all',compact('conditions','order'));
 		foreach ($channels_array as $webchannel) {

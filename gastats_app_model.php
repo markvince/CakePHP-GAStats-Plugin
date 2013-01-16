@@ -1,7 +1,7 @@
 <?php
 
 class GastatsAppModel extends AppModel {
-	
+	var $useDbConfig = "gastats_plugin";
 	public $GoogleAnalytics = null;
 	public $source = 'gastats';
 	public $metrics = array(

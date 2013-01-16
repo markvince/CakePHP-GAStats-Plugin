@@ -50,6 +50,7 @@ class GastatsWebstat extends GastatsAppModel {
 		$conditions = compact('start_date','end_date');
 		$order = 'metric ASC';
 		$stats_array = $this->find('all',compact('conditions','order'));
+		$stats = array();
 		foreach ($stats_array as $stat) {
 			$stat = $stat['GastatsWebstat'];
 			if (isset($this->metrics[$stat['metric']]) && $this->metrics[$stat['metric']]['display'] == true) {

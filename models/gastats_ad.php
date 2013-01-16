@@ -20,12 +20,12 @@ class GastatsAd extends GastatsAppModel {
 		}
 		$stats = $GastatsRaw->getStats($this->stats_type,$start_date,$end_date);
 		//0 - track_banner_view
-		//1 - GEN
+		//1 - GEN (location)
 		//2 - ABC (sponsor)
 		//3 - 42 (ad_id)
 		//4 - img (type of banner)
 		//5 - 71 (corp_id)
-		//6 - cp_banner_600x154?ref=... (banner location and page banner was on) 
+		//6 - cp_banner_600x154?ref=... (banner slot and page banner was on) 
 		$agstats = array();
 		foreach ($stats as $stat) {
 			$stat = $stat['GastatsRaw'];
@@ -59,7 +59,6 @@ class GastatsAd extends GastatsAppModel {
 					foreach ($corpstats as $ad_id => $ad_slots) {
 						foreach ($ad_slots as $ad_slot => $value) {
 							$data = compact('start_date','end_date','ad_stat_type','location','corp_id','ad_id','ad_slot','value');
-							//debug($data);die();
 							$this->create();
 							$this->save($data);
 						}

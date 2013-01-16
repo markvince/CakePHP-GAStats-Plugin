@@ -167,7 +167,7 @@ class GastatsRaw extends GastatsAppModel {
 				foreach ($stat_details as $key =>$val) {
 					$savedata = array('start_date'=>$start_date, 'end_date' => $end_date, 'key' => $key, 'value' =>$val, 'stat_type'=>$stat_type);
 					//debug($savedata);
-					$this->create();
+					$this->create(false);
 					if (!$this->save($savedata)) {
 						$this->errors[] = "Error saving GA data. $stat_type $start_date $end_date";
 						return false;
