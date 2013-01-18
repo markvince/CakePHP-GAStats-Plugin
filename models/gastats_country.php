@@ -34,6 +34,21 @@ class GastatsCountry extends GastatsAppModel {
 		}
 	}
 	
+
+    function getUSPercentage ($start_date=null, $stop_date=null) {
+    	$conditions = compact('start_date', 'end_date');
+    	$conditions['country'] = 'United States';
+    	$fields = array('visits');
+    	$us_total = $this->find('first', compact('conditions', 'fields'));
+    	unset($conditions['country']);
+    	$fields = array('SUM(visits) visits');
+    	$total = $this->find('first', compact('conditions', 'fields'));
+    	$us_percent = substr(preg_replace("/0\./",".",$us_total['GastatsCountry']['visits'] / $total['GastatsCountry']['visits']),0,5);
+    	$us_percent = ($us_percent * 100);
+    	return $us_percent;
+    }
+
+
 	/**
 	*
 	*/

@@ -114,6 +114,15 @@ class GastatsAd extends GastatsAppModel {
 		}
 		return compact('corp_id','start_date','end_date','ads','corps');
 	}
+
+	public function getMaxViewsBySlot($ad_slot='', $start_date=null, $end_date=null) {
+		$conditions = compact('ad_slot', 'start_date', 'stop_date');
+		$conditions['ad_stat_type'] = 'view';
+		$conditions['location'] = 'GEN';
+		$fields = array('MAX(value) views');
+		$result = $this->find('first', compact('conditions', 'fields'));
+		return (isset($result['GastatsAd']['views']) ? $result['GastatsAd']['views'] : '');
+	}
 	
 	
 }
