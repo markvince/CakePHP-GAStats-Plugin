@@ -33,6 +33,11 @@ class GastatsRaw extends GastatsAppModel {
 			'dimensions' => array('pagePath'),
 			'filters' => array('pagePath=~^/track_.*'),
 			),
+		'webad-events' => array(
+			'metrics' => array('totalEvents'),
+			'dimensions' => array('eventAction'),
+			'filters' => array('eventAction%3D@track_banner','eventAction%3D@track_spotlight'),
+			),
 		//-------
 		'webstats' => array(
 			'metrics' => array('pageviews','visitors','visits','timeOnSite', 'avgTimeOnSite'),
@@ -75,8 +80,11 @@ class GastatsRaw extends GastatsAppModel {
 	* Query gastats_raws table
 	*
 	*/
-	public function getStats($stat_type=null,$start_date=null,$end_date=null) {
-		$conditions = compact('stat_type','start_date','end_date');
+	public function getStats($stat_type=null,$start_date=null,$end_date=null,$key=null) {
+		$conditions = compact('stat_type','start_date','end_date','key');
+		/*if (!empty($key)) {
+			$conditions[] = 'GastatsRaw.key LIKE "%'.$key.'%"';
+		}*/
 		return $this->find('all',compact('conditions'));
 	}
 	
