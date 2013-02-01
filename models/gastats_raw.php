@@ -266,5 +266,32 @@ class GastatsRaw extends GastatsAppModel {
 		return $content;
 		
 	}
+
+	//====================================
+
+	public function processGAStatsAll($start=null, $stop=null) {
+		if (empty($start) || empty($stop)) {
+			//default to last month
+			$start = date('Y-m-01', strtotime(date('Y-m-01').' -1 month'));
+			$stop = date('Y-m-t', strtotime(date('Y-m-01').' -1 month'));
+			echo "Date range not supplied, using: $start to $stop\n";
+		}
+		$GastatsAd = ClassRegistry::init('Gastats.GastatsAd');
+		$GastatsCountry = ClassRegistry::init('Gastats.GastatsCountry');
+		$GastatsWebchannel = ClassRegistry::init('Gastats.GastatsWebchannel');
+		$GastatsWebstat = ClassRegistry::init('Gastats.GastatsWebstat');
+		
+		echo "Pulling the Raw generic stats\n";
+		//$this->processGAStats($start, $stop);
+		echo "Pulling the Ad stats\n";
+		$GastatsAd->processGAStats($start,$stop,true);
+		echo "Pulling the Country stats\n";
+		$GastatsCountry->processGAStats($start,$stop,true);
+		echo "Pulling the Webchannel stats\n";
+		$GastatsWebchannel->processGAStats($start,$stop,true);
+		echo "Pulling the Webstat stats\n";
+		$GastatsWebstat->processGAStats($start,$stop,true); 
+		return true;
+	}
 }
 ?>
