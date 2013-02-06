@@ -282,7 +282,7 @@ class GastatsRaw extends GastatsAppModel {
 		$GastatsWebstat = ClassRegistry::init('Gastats.GastatsWebstat');
 		
 		echo "Pulling the Raw generic stats\n";
-		//$this->processGAStats($start, $stop);
+		$this->processGAStats($start, $stop);
 		echo "Pulling the Ad stats\n";
 		$GastatsAd->processGAStats($start,$stop,true);
 		echo "Pulling the Country stats\n";
