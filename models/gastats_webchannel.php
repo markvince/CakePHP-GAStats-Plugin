@@ -4,6 +4,7 @@ Class GastatsWebchannel extends GastatsAppModel {
 	public $name = "GastatsWebchannel";
 	public $useTable = "gastats_webchannels";
 	public $stat_type = 'webchannels';
+	public $channel_prefix = 'expo';
 	
 	public function processGAStats($start_date=null, $end_date=null, $refresh=false) {
 		$stat_type = $this->stat_type;
@@ -28,8 +29,9 @@ Class GastatsWebchannel extends GastatsAppModel {
 			if ($refresh) {
 				$GastatsRaw->purgeStats($stat_type,$start_date,$end_date); //remove data collected from GA
 				$this->purgeWebchannelStats($start_date,$end_date);			//remove aggregate data
-				foreach ($channels as $channel) {
-					$GastatsRaw->page_path = $channel;
+				foreach ($channels as $corp_id => $channel) {
+					$GastatsRaw->page_path = $this->channel_prefix.'/'.$channel;
+					$channels[$corp_id] = $GastatsRaw->page_path;
 					$GastatsRaw->getGAData($stat_type,$start_date,$end_date,true);
 				}
 			}
