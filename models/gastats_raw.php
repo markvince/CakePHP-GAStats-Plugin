@@ -203,7 +203,7 @@ class GastatsRaw extends GastatsAppModel {
 					if ($data['dxp:metric_attr']['value']>0) {
 						 $key = $data['dxp:dimension_attr']['value'];
 						 $value = $data['dxp:metric_attr']['value'];
-					 if (isset($this->stats_data[$key])) {
+					 if (isset($this->stats_data[$stat_type][$key])) {
 						 $this->stats_data[$stat_type][$key] = $this->stats_data[$key] + $value;
 					 } else {
 						 $this->stats_data[$stat_type][$key] = $value;
