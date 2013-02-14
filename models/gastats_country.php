@@ -12,7 +12,7 @@ class GastatsCountry extends GastatsAppModel {
 	*/
 	public function processGAStats($start_date=null, $end_date=null, $refresh=false) {
 		$GastatsRaw = ClassRegistry::init('Gastats.GastatsRaw');
-				
+		$GastatsRaw->page_path='';		
 		if ($refresh) {
 			$GastatsRaw->getGAData($this->stats_type,$start_date,$end_date,true);
 			$this->purgeCountryStats($start_date, $end_date);

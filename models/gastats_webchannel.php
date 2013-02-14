@@ -9,6 +9,7 @@ Class GastatsWebchannel extends GastatsAppModel {
 	public function processGAStats($start_date=null, $end_date=null, $refresh=false) {
 		$stat_type = $this->stat_type;
 		$GastatsRaw = ClassRegistry::init('Gastats.GastatsRaw');
+		$GastatsRaw->page_path='';
 		$this->loadGA(false);//load datasource but don't log into google
 		if (isset($this->GoogleAnalytics->config['channels'])) {
 			$config = explode('/',$this->GoogleAnalytics->config['channels']);
