@@ -74,6 +74,7 @@ class GastatsRaw extends GastatsAppModel {
 	public function processGAStats($start_date=null,$end_date=null) {
 		//run defaults
 		$this->page_path='';
+		$this->purgeStats($this->stat_type, $start_date, $end_date);
 		return $this->getGAData($this->stat_type, $start_date, $end_date, true);
 	}
 	
