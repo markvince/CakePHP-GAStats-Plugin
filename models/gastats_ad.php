@@ -3,7 +3,8 @@
 class GastatsAd extends GastatsAppModel {
 	public $name = "GastatsAd";
 	public $useTable = "gastats_ads";
-	public $stats_type = 'webads';
+	//public $stats_type = 'webads';
+	public $stats_type = 'webad-events';
 	
 	
 	/**
