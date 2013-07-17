@@ -83,11 +83,13 @@ class GastatsRaw extends GastatsAppModel {
 	*
 	*/
 	public function getStats($stat_type=null,$start_date=null,$end_date=null,$key=null) {
-		$conditions = compact('stat_type','start_date','end_date');
+		$conditions = array('stat_type' => $stat_type,'start_date >=' => $start_date,'end_date <=' => $end_date);
 		if (!empty($key)) {
 			$conditions['GastatsRaw.key'] = $key;
 		}
-		return $this->find('all',compact('conditions'));
+		$results = $this->find('all',compact('conditions'));
+		debug($results);die();
+		return $results;
 	}
 	
 	/**

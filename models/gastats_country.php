@@ -35,10 +35,10 @@ class GastatsCountry extends GastatsAppModel {
 	}
 	
 
-    function getUSPercentage ($start_date=null, $stop_date=null) {
-    	$conditions = compact('start_date', 'end_date');
+    function getUSPercentage ($start_date=null, $end_date=null) {
+    	$conditions = array('start_date >=' => $start_date, 'end_date <=' => $end_date);
     	$conditions['country'] = 'United States';
-    	$fields = array('visits');
+    	$fields = array('SUM(visits) visits');
     	$us_total = $this->find('first', compact('conditions', 'fields'));
     	unset($conditions['country']);
     	$fields = array('SUM(visits) visits');

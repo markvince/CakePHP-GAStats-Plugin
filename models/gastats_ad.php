@@ -83,18 +83,23 @@ class GastatsAd extends GastatsAppModel {
 	*/
 	public function getAds($corp_id=0, $start_date=null, $end_date=null) {
 		if ($corp_id == 0) {
-			$conditions = compact('start_date','end_date');
+			$conditions = array('start_date >=' => $start_date,'end_date <=' => $end_date);
 		} else {
-			$conditions = compact('corp_id','start_date','end_date');
+			$conditions = array('corp_id' => $corp_id,'start_date >=' => $start_date,'end_date <=' => $end_date);
 		}
 		
 		$ads_array = $this->find('all',compact('conditions'));
+		debug($ads_array);die();
 		$ads = array();
 		$corps=array();
 		//prep data for display
 		foreach ($ads_array as $ad) {
 			$ad = $ad['GastatsAd'];
-			$ads['unique'][$ad['ad_id']][$ad['location']][$ad['ad_slot']][$ad['ad_stat_type']] = $ad['value'];
+			if (isset($ads['unique'][$ad['ad_id']][$ad['location']][$ad['ad_slot']][$ad['ad_stat_type']])){
+				$ads['unique'][$ad['ad_id']][$ad['location']][$ad['ad_slot']][$ad['ad_stat_type']] += $ad['value'];
+			} else {
+				$ads['unique'][$ad['ad_id']][$ad['location']][$ad['ad_slot']][$ad['ad_stat_type']] = $ad['value'];
+			}
 			$corps[$ad['ad_id']] = $ad['corp_id'];
 			//breakdown
 			//Total by stat type only (click/view)
@@ -117,12 +122,35 @@ class GastatsAd extends GastatsAppModel {
 	}
 
 	public function getMaxViewsBySlot($ad_slot='', $start_date=null, $end_date=null) {
-		$conditions = compact('ad_slot', 'start_date', 'stop_date');
-		$conditions['ad_stat_type'] = 'view';
-		$conditions['location'] = 'GEN';
-		$fields = array('MAX(value) views');
-		$result = $this->find('first', compact('conditions', 'fields'));
-		return (isset($result['GastatsAd']['views']) ? $result['GastatsAd']['views'] : '');
+		//To Enable multi-month query we need to run this in a loop pulling the 'max' for each month
+		$start_year = date('Y', strtotime($start_date));
+		$start_month = date('m', strtotime($start_date));
+		$end_year = date('Y', strtotime($end_date));
+		$end_month = date('m', strtotime($end_date));
+		//Build list of months
+		$year = $start_year;
+		$month = $start_month;
+		$months = array();
+		while($year < $end_year || ($year == $end_year && $month <= $end_month)) {
+			$months[] = array('start' => date('Y-m-01', strtotime("$year-$month-01")), 'end' => date('Y-m-t', strtotime("$year-$month-01")));
+			$month++;
+			if ($month == 13) {
+				$month = 1;
+				$year++;
+			}
+		}
+		$total_max = 0;
+		foreach ($months as $month) {
+			$start_date = $month['start'];
+			$end_date = $month['end'];
+			$conditions = compact('ad_slot', 'start_date', 'end_date');
+			$conditions['ad_stat_type'] = 'view';
+			$conditions['location'] = 'GEN';
+			$fields = array('MAX(value) views');
+			$result = $this->find('first', compact('conditions', 'fields'));
+			$total_max += (isset($result['GastatsAd']['views']) ? $result['GastatsAd']['views'] : 0);
+		}
+		return ($total_max === 0 ? '' : $total_max);
 	}
 	
 	
