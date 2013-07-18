@@ -88,7 +88,6 @@ class GastatsRaw extends GastatsAppModel {
 			$conditions['GastatsRaw.key'] = $key;
 		}
 		$results = $this->find('all',compact('conditions'));
-		debug($results);die();
 		return $results;
 	}
 	

@@ -89,7 +89,6 @@ class GastatsAd extends GastatsAppModel {
 		}
 		
 		$ads_array = $this->find('all',compact('conditions'));
-		debug($ads_array);die();
 		$ads = array();
 		$corps=array();
 		//prep data for display
