@@ -194,7 +194,20 @@ class GastatsRaw extends GastatsAppModel {
 				//should only be one result per channel
 				$attr = 0;
 				foreach ($this->stat_types[$stat_type]['metrics'] as $metric) {
-					$this->stats_data[$stat_type][$this->page_path.'|'.$metric] = $entries['dxp:metric'][$attr.'_attr']['value'];
+					if (isset($entries['dxp:metric'][$attr.'_attr']['value'])) {
+						$this->stats_data[$stat_type][$this->page_path.'|'.$metric] = $entries['dxp:metric'][$attr.'_attr']['value'];
+					} else {
+						//Check if multiple results due to page path differences
+						foreach ($entries as $entry) {
+							if (isset($entry['dxp:metric'][$attr.'_attr']['value']) && strpos($entry['title'], 'ga:pagePath=') !== false) {
+								$temp_page_path = str_replace("ga:pagePath=/","", $entry['title']);
+								$temp_page_path = trim($temp_page_path,"/");
+								if ($temp_page_path == $this->page_path) {
+									$this->stats_data[$stat_type][$this->page_path.'|'.$metric] = $entry['dxp:metric'][$attr.'_attr']['value'];
+								}
+							}
+						}
+					}
 					$attr++;
 				}
 			}
