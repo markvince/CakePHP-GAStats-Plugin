@@ -1,5 +1,5 @@
 <?php
-App::import('Core', 'HttpSocket');
+App::uses('HttpSocket', 'Network/Http');
 class GASource extends DataSource {
 	protected $_schema = array('tweets'=>array());
 	public $description = "Google Analytics Data Source";
@@ -36,16 +36,11 @@ class GASource extends DataSource {
 	* @param array $config
 	*/
 	public function  __construct($config = array()) {
-		App::import('Core', array('Xml', 'HttpSocket'));
-		$this->config = set::merge($this->config, $config);
+		App::uses('Xml', 'Utility');
+		App::uses('HttpSocket', 'Network/Http');
+		$this->config = Set::merge($this->config, $config);
 		$this->HttpSocket = new HttpSocket();
 		$this->login();
-				
-		//App::import('Model', $this->config['modelLog']);
-		//$this->modelLog =& ClassRegistry::init($this->config['modelLog']);
-		//if (!is_object($this->modelLog)) {
-		//	return $this->cakeError('missingModel', 'Missing "modelLog" model: '.$this->config['modelLog']);
-		//}
 		return parent::__construct($config);
 	}
 	

@@ -62,7 +62,7 @@ class GastatsRaw extends GastatsAppModel {
 	public function config($config = array()) {
 		$this->loadGA();
 		if (!empty($config) && is_array($config)) {
-			$this->GoogleAnalytics->config = set::merge($this->GoogleAnalytics->config, $config);
+			$this->GoogleAnalytics->config = Set::merge($this->GoogleAnalytics->config, $config);
 		}
 		return $this->GoogleAnalytics->config;
 	}
@@ -113,7 +113,7 @@ class GastatsRaw extends GastatsAppModel {
 	public function getGAData($stat_type=null, $start_date=null, $end_date=null, $paginate=false, $options = array()) {
 		$this->loadGA();
 		$this->stats_data = null;
-		$this->stat_types = (isset($this->GoogleAnalytics->config['stat_types']) ? set::merge($this->stat_types, $this->GoogleAnalytics->config['stat_types']) : $this->stat_types);
+		$this->stat_types = (isset($this->GoogleAnalytics->config['stat_types']) ? Set::merge($this->stat_types, $this->GoogleAnalytics->config['stat_types']) : $this->stat_types);
 		if(!empty($start_date) && !empty($end_date)) {
 			if (!empty($stat_type)) {
 				$options = array_merge($this->stat_types[$stat_type], $options); //add/replace stat_type parameters				
@@ -126,7 +126,7 @@ class GastatsRaw extends GastatsAppModel {
 				return false;
 			}
 			if (!empty($this->page_path)) {
-				$options['filters'] = set::merge($options['filters'],array('pagePath=~^/'.$this->page_path.'/?$'));
+				$options['filters'] = Set::merge($options['filters'],array('pagePath=~^/'.$this->page_path.'/?$'));
 			}
 			$this->metric_count = count($options['metrics']);//will define how the data is stored
 			$response = $this->GoogleAnalytics->report($options);

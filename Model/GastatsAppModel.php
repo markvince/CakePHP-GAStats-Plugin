@@ -18,8 +18,8 @@ class GastatsAppModel extends AppModel {
 	
 	
 	public function loadGA($login=true) {
-		App::import('Core','ConnectionManager');
-		$this->GoogleAnalytics = ConnectionManager::getDataSource($this->source);
+        App::uses('ConnectionManager', 'Model');
+        $this->GoogleAnalytics = ConnectionManager::getDataSource($this->source);
 		if ($login) {
 			$this->GoogleAnalytics->login();	
 		}
