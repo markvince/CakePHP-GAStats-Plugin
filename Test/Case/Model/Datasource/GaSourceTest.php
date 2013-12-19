@@ -72,43 +72,26 @@ class GaSourceTestCase extends AppTestCase {
 		unset($this->GaSource);
 		ClassRegistry::flush();
 	}
+	// ---------------------
 
-	/*
-	public function testRequestBeforeAuth() {
-		$this->assertNull($this->GaSource->authkey);
-		$this->assertNull($this->GaSource->authHeader);
-		$result = $this->GaSource->request('login');
-		$this->assertNull($this->GaSource->authkey);
-		$this->assertNull($this->GaSource->authHeader);
-		$this->assertTrue(strpos($result, 'BadAuth'));
+	public function testProfiles() {
+		$result = $this->GaSource->profiles();
+		$this->assertTrue(is_array($result));
+		$this->assertFalse(empty($result));
+		$this->assertEqual(substr(key($result), 0, 3), 'ga:');
 	}
-	/*-*/
-	public function testLogin() {
-		$this->assertNull($this->GaSource->authkey);
-		$this->assertNull($this->GaSource->authHeader);
-		$this->assertTrue($this->GaSource->login());
-		$this->assertFalse(empty($this->GaSource->authkey));
-		$this->assertFalse(empty($this->GaSource->authHeader));
-	}
-	/*
-	public function testRequest() {
-		$action = 'report';
-		$query = array();
-		$requestOptions = array();
-		$this->assertNull($this->GaSource->authkey);
-		$this->assertNull($this->GaSource->authHeader);
-		$result = $this->GaSource->request('login', $query, $requestOptions);
-		$this->assertNull($this->GaSource->authkey);
-		$this->assertNull($this->GaSource->authHeader);
-		$this->assertTrue(strpos($result, 'BadAuth'));
-
-		debug($result);
-	}
-
-	/*
-	public function testReport() {
-		$input = array();
-		$result = $this->GaSource->report($input);
+	public function testQuery() {
+		$params = array(
+			'metrics' => 'ga:pageviews',
+			'dimensions' => 'ga:pagePath',
+			'filters' => 'ga:pagePath!@track_;ga:pagePath!~^/admin.*;ga:pagePath!~^/api.*',
+			'start-date' => date('Y-m-01'),
+			'end-date' => date('Y-m-t'),
+			'max-results' => (int) 20,
+		);
+		$result = $this->GaSource->query($params);
+		$this->assertTrue(array_key_exists('rows', $result));
+		$this->assertEqual(count($result['rows']), 20);
 		debug($result);
 	}
 	/* -- */
