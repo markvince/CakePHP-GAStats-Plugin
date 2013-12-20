@@ -44,7 +44,7 @@ class GastatsCountry extends GastatsAppModel {
 		$fields = array('SUM(visits) visits');
 		$total = $this->find('first', compact('conditions', 'fields'));
 		$us_percent = $us_total['GastatsCountry']['visits'] / max(1, $total['GastatsCountry']['visits']);
-		return round($us_percent, 2);
+		return round($us_percent * 100, 2);
 	}
 
 
