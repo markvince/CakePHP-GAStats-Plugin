@@ -95,10 +95,10 @@ class GastatsRaw extends GastatsAppModel {
 	*
 	*/
 	public function purgeStats($stat_type = null, $start_date=null, $end_date=null, $authorize=false) {
-		if ($stat_type == 'all' && $start_date == 'all' && $end_date = 'all' && $authorize) {
+		if ($stat_type == 'all' && $start_date == 'all' && $end_date == 'all' && $authorize) {
 			//this will remove all data from the table
 			$conditions = array('1');
-		} elseif ($stat_type == 'all' && $start_date == 'all' && $end_date = 'all') {
+		} elseif ($stat_type == 'all' && $start_date == 'all' && $end_date == 'all') {
 			$this->errors[] = 'Missing authorization.  Stats not purged.';
 			return false;
 		} else {
