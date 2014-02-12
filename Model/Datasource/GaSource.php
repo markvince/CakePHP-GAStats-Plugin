@@ -1,19 +1,18 @@
 <?php
+App::uses('DataSource', 'Model/Datasource');
 App::uses('HttpSocket', 'Network/Http');
-class GASource extends DataSource {
+class GaSource extends DataSource {
 	protected $_schema = array('tweets'=>array());
 	public $description = "Google Analytics Data Source";
 	public $HttpSocket = null;
 
 	/**
-	 * config placeholder
-	 * configure by editing app/Config/gastats.php
-	 *
+	 * Default config
 	 * @var array
 	 */
 	public $config = array();
-	protected $authkey = null;
-	protected $authHeader = null;
+	public $authkey = null;
+	public $authHeader = null;
 
 	/**
 	 * setup the config
@@ -23,10 +22,27 @@ class GASource extends DataSource {
 	public function  __construct($config = array()) {
 		App::uses('Xml', 'Utility');
 		App::uses('HttpSocket', 'Network/Http');
+		$this->config = $this->config($config);
 		$this->HttpSocket = new HttpSocket();
-		$this->config();
-		$this->login();
 		return parent::__construct($config);
+	}
+
+	/**
+	 * GA OAuth setup
+	 *
+	 */
+	public function setup() {
+		if (!empty($this->ga)) {
+			return;
+		}
+		$this->config();
+		$file = dirname(dirname(__DIR__)) . DS . 'Vendor' . DS . 'GoogleAnalyticsAPI.class.php';
+		App::import('Vendor', 'GoogleAnalyticsAPI', compact('file'));
+		if (!class_exists('GoogleAnalyticsAPI')) {
+			require_once($file);
+		}
+		$this->ga = new GoogleAnalyticsAPI('service');
+		$this->auth();
 	}
 
 	/**
@@ -43,8 +59,90 @@ class GASource extends DataSource {
 	}
 
 	/**
+	 * GA OAuth get auth / access_token
+	 * and set into the ga class
+	 */
+	public function auth() {
+		if (!empty($this->authkey)) {
+			return;
+		}
+		$this->ga->auth->setClientId($this->config['auth']['clientId']); // From the APIs console
+		$this->ga->auth->setEmail($this->config['auth']['email']); // From the APIs console
+		$this->ga->auth->setPrivateKey($this->config['auth']['privateKey']); // Path to the .p12 file
+		$auth = $this->ga->auth->getAccessToken();
+		if ($auth['http_code'] != 200) {
+			throw new OutOfBoundsException('Unable to get googleAnalytics auth - bad response');
+		}
+		if (empty($auth['access_token'])) {
+			throw new OutOfBoundsException('Unable to get googleAnalytics auth - empty access_token');
+		}
+		$this->ga->setAccessToken($auth['access_token']);
+		$this->ga->setAccountId($this->config['defaults']['accountId']);
+		$this->authkey = $auth['access_token'];
+		// autoset defaults
+		$defaults = $this->config['defaults'];
+		unset($defaults['accountId']);
+		$this->ga->setDefaultQueryParams($defaults);
+	}
+
+	/**
+	 * Print out the Accounts with Id => Name.
+	 */
+	public function profiles() {
+		$this->setup();
+		$profiles = $this->ga->getProfiles();
+		$this->lookForErrors($profiles);
+		$accounts = array();
+		foreach ($profiles['items'] as $item) {
+			$id = "ga:{$item['id']}";
+			$name = $item['name'];
+			$accounts[$id] = $name;
+		}
+		return $accounts;
+	}
+
+	/**
+	 * Set the default params. For example the start/end dates and max-results
+	 */
+	public function defaults($defaults) {
+		$this->setup();
+		return $this->ga->setDefaultQueryParams($defaults);
+	}
+
+	/**
+	 * Set the Account Id
+	 */
+	public function setAccountId($accountId) {
+		$this->setup();
+		if (substr($accountId, 0, 3) != 'ga:') {
+			$accountId = 'ga:' . $accountId;
+		}
+		return $this->ga->setAccountId($accountId);
+	}
+
+	/**
 	 *
+	 */
+	public function query($params) {
+		$this->setup();
+		$response = $this->ga->query($params);
+		$this->lookForErrors($response);
+		return $response;
+	}
+
+	/**
 	 *
+	 */
+	public function lookForErrors($response) {
+		if ($response['http_code'] != 200) {
+			//debug($response);
+			throw new OutOfBoundsException("Error: {$response['code']} {$response['message']}");
+		}
+	}
+
+
+	/**
+	 * Run a report against GA api
 	 */
 	public function report($options = array()) {
 		//comma separate options
@@ -68,70 +166,8 @@ class GASource extends DataSource {
 				$query[$key] = $val;
 			}
 		}
-		//debug($query);
-		return $this->request('report', $query);
+		return $this->query($query);
 	}
-
-	/**
-	 * send request to Google
-	 *
-	 */
-	public function request($action=null, $query = array(), $requestOptions = array()) {
-		if ($action == 'login') {
-			$request_url = $this->config['url-login'];
-		} elseif ($action == 'report') {
-			$request_url = $this->config['url-report'];
-			$query['authkey']=$this->authkey;
-			if (!isset($query['ids'])) {
-				$query['ids'] ='ga:'.$this->config['ids'];
-			}
-			$requestOptions['header'] = $this->authHeader;
-		} elseif ($action == 'list-accounts') {
-			//list accounts
-		}
-		return $this->HttpSocket->get($request_url, $query, $requestOptions);
-	}
-
-	/**
-	 * Simple Login functionality
-	 * @return bool $loggedIn
-	 */
-	public function login() {
-		if (!empty($this->authkey)) {
-			return true;
-		}
-		$query = $this->config['auth'];
-		$response = $this->request('login',$query);
-		//strip out auth key
-		preg_match('/Auth=([0-9A-Za-z_-]+)$/',$response,$auth_matches);
-		if (isset($auth_matches) && isset($auth_matches[1]) && !empty($auth_matches[1])) {
-			$this->authkey = $auth_matches[1];
-			$this->authHeader = array("Content-Type" => "text/xml", "Authorization" => "GoogleLogin auth=$this->authkey");
-			return true;
-		}
-		return false;
-	}
-
-	/**
-	 * Sets method = GET in request if not already set
-	 * @param AppModel $model
-	 * @param array $queryData Unused
-	 */
-	public function read(&$model, $queryData = array()) {
-		$response = '';
-		if ($this->login()) {
-			$response = $this->request($model, $queryData);
-		}
-		return $response;
-	}
-
-	public function listSources() {
-		return array('tweets');
-	}
-	public function describe($model) {
-		return $this->_schema['tweets'];
-	}
-
 }
 
 
