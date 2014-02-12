@@ -130,32 +130,27 @@ class GastatsRaw extends GastatsAppModel {
 			}
 			$this->metric_count = count($options['metrics']);//will define how the data is stored
 			$response = $this->GoogleAnalytics->report($options);
-
-			$xml = $this->parseGAData($response);
-			if (isset($xml['feed']['entry']) && is_array($xml['feed']['entry'])) {
-				$num_entries = count($xml['feed']['entry']);
-				if ($num_entries > 0) {
-					$this->storeGAData($xml,$stat_type,$start_date,$end_date);
+			$num_entries = (empty($response['rows']) ? 0 : count($response['rows']));
+			if ($num_entries > 0) {
+				$this->storeGAData($response,$stat_type,$start_date,$end_date);
 					$page_count = 1;
 					if ($paginate && ($num_entries == $options['max-results'])) {
 						$start_index = 1; //default
 						echo "Pulled page $page_count with $num_entries results.";
 						//Loop until no more data
-						while (isset($xml['feed']['entry']) && count($xml['feed']['entry']) > 0) {
+						while (isset($response['rows']) && count($response['rows']) > 0) {
 							$start_index += $options['max-results'];
 							$options['start-index'] = $start_index;
 							$page_count++;
 							$num_entries = 0;
 							$response = $this->GoogleAnalytics->report($options);
-							$xml = $this->parseGAData($response);
-							if (isset($xml['feed']['entry']) && is_array($xml['feed']['entry'])) {
-								$num_entries =  count($xml['feed']['entry']);
+							if (isset($response['rows']) && is_array($response['rows'])) {
+								$num_entries =  count($response['rows']);
 								echo "Pulled page $page_count with $num_entries results.";
-								$this->storeGAData($xml,$stat_type,$start_date,$end_date);
+								$this->storeGAData($response,$stat_type,$start_date,$end_date);
 							}
 						}
 					}
-				}
 			}
 			if (!$this->errors()) {
 				//Purge old stats matching stat type and date range
@@ -171,8 +166,8 @@ class GastatsRaw extends GastatsAppModel {
 	/**
 	*
 	*/
-	function storeGAData ($xml=null, $stat_type=null, $start_date=null, $end_date=null) {
-		if ($xml == 'save' && !empty($stat_type) && !empty($start_date) && !empty($end_date)) {
+	function storeGAData ($response=null, $stat_type=null, $start_date=null, $end_date=null) {
+		if ($response == 'save' && !empty($stat_type) && !empty($start_date) && !empty($end_date)) {
 			$this->stats_data = (is_array($this->stats_data) ? $this->stats_data : array());
 			foreach ($this->stats_data as $stat_type => $stat_details) {
 				foreach ($stat_details as $key =>$val) {
@@ -188,51 +183,42 @@ class GastatsRaw extends GastatsAppModel {
 
 		} else {
 			//store gathered data in array while gathering more data
-			$entries = (isset($xml['feed']['entry']) ? $xml['feed']['entry'] : array());
 			if (strpos($stat_type,'webchannels') !== false && $this->metric_count > 1) {
 				//store multiple metrics for specified page path
 				//should only be one result per channel
-				$attr = 0;
-				foreach ($this->stat_types[$stat_type]['metrics'] as $metric) {
-					if (isset($entries['dxp:metric'][$attr.'_attr']['value'])) {
-						$this->stats_data[$stat_type][$this->page_path.'|'.$metric] = $entries['dxp:metric'][$attr.'_attr']['value'];
-					} else {
-						//Check if multiple results due to page path differences
-						foreach ($entries as $entry) {
-							if (isset($entry['dxp:metric'][$attr.'_attr']['value']) && strpos($entry['title'], 'ga:pagePath=') !== false) {
-								$temp_page_path = str_replace("ga:pagePath=/","", $entry['title']);
-								$temp_page_path = trim($temp_page_path,"/");
-								if ($temp_page_path == $this->page_path) {
-									$this->stats_data[$stat_type][$this->page_path.'|'.$metric] = $entry['dxp:metric'][$attr.'_attr']['value'];
-								}
-							}
+				foreach ($response['rows'] as $entry) {
+					foreach ($entry as $col_index => $col_val) {
+						if ($response['columnHeaders'][$col_index]['columnType'] == "METRIC") {
+							$metric = str_replace("ga:", "", $response['columnHeaders'][$col_index]['name']);
+							$this->stats_data[$stat_type][$this->page_path.'|'.$metric] = $col_val;
 						}
 					}
-					$attr++;
 				}
-			}
-			//if (in_array($stat_type, array('country','webads','generic', 'generic-notracking', 'generic-notracking-noadmin'))) {
-			elseif ($this->metric_count == 1) {
+			} elseif ($this->metric_count == 1) {
 				//store single metric value for single dimension
-				foreach ($entries as $data) {
-					//if (in_array($data['dxp:metric_attr']['name'],array('ga:pageviews','ga:visits')) && $data['dxp:metric_attr']['value']>0) {
-					if ($data['dxp:metric_attr']['value']>0) {
-						 $key = $data['dxp:dimension_attr']['value'];
-						 $value = $data['dxp:metric_attr']['value'];
-					 if (isset($this->stats_data[$stat_type][$key])) {
-						 $this->stats_data[$stat_type][$key] = $this->stats_data[$key] + $value;
-					 } else {
-						 $this->stats_data[$stat_type][$key] = $value;
-					 }
+				foreach ($response['rows'] as $entry) {
+					foreach ($entry as $col_index => $col_val) {
+						if ($response['columnHeaders'][$col_index]['columnType'] == "DIMENSION") {
+							$key = $col_val;
+						} elseif ($response['columnHeaders'][$col_index]['columnType'] == "METRIC") {
+							$value = $col_val;
+						}
+					}
+					if (isset($this->stats_data[$stat_type][$key])) {
+						$this->stats_data[$stat_type][$key] = $this->stats_data[$key] + $value;
+					} else {
+						$this->stats_data[$stat_type][$key] = $value;
 					}
 				}
-			//} elseif (strpos($stat_type,'webstats') !== false) {
 			} elseif ($this->metric_count > 1) {
 				//store multiple metrics for site
-				$attr = 0;
-				foreach ($this->stat_types[$stat_type]['metrics'] as $metric) {
-					$this->stats_data[$stat_type][$metric] = $entries['dxp:metric'][$attr.'_attr']['value'];
-					$attr++;
+				foreach ($response['rows'] as $entry) {
+					foreach ($entry as $col_index => $col_val) {
+						if ($response['columnHeaders'][$col_index]['columnType'] == "METRIC") {
+							$metric = str_replace("ga:", "", $response['columnHeaders'][$col_index]['name']);
+							$this->stats_data[$stat_type][$metric] = $col_val;
+						}
+					}
 				}
 			}
 		}
