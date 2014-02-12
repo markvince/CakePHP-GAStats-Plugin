@@ -9,11 +9,19 @@
  *   Follow setup steps for API Service Account on:
  *     https://github.com/wanze/Google-Analytics-API-PHP
  *
- * Create a Project in the Google APIs Console: https://code.google.com/apis/console/
- * Enable the Analytics API under Services
- * Under API Access: Create an Oauth 2.0 Client-ID
- * Give a Product-Name, choose "Service Account"
- * Download the private key (.p12 file)
+ * Create a Project in the Google APIs Console:
+ *   https://cloud.google.com/console/
+ *     Create a Project
+ *     Enable the Analytics API under Services
+ *     OAuth2 > Create a new Client
+ *       choose "Service Account"
+ *     Download the private key (.p12 file)
+ *   https://code.google.com/apis/console/ (old)
+ *     Enable the Analytics API under Services
+ *     Under API Access: Create an Oauth 2.0 Client-ID
+ *     Give a Product-Name, choose "Service Account"
+ *     Download the private key (.p12 file)
+ *
  * cp ~/Downloads/*.p12 app/Config/gastats_api_privatekey.p12
  *
  * fill in the config details
