@@ -30,7 +30,7 @@ class GastatsAd extends GastatsAppModel {
 		$agstats = array();
 		foreach ($stats as $stat) {
 			$stat = $stat['GastatsRaw'];
-			if (stripos($stat['key'], 'track_banner') === false) {
+			if (stripos($stat['key'], 'track_') === false) {
 				continue;
 			}
 			$url = explode('?',$stat['key']);
@@ -38,13 +38,13 @@ class GastatsAd extends GastatsAppModel {
 			if ($urla[0] == "") {
 				array_shift($urla);
 			}
-			if ($urla[0] == "track_banner_click") {
+			if (in_array($urla[0], array("track_banner_click", "track_logo_click"))) {
 				if(isset($agstats['click'][$urla[1]][$urla[5]][$urla[3]][$urla[6]])) {
 						$agstats['click'][$urla[1]][$urla[5]][$urla[3]][$urla[6]] += $stat['value'];
 				} else {
 					$agstats['click'][$urla[1]][$urla[5]][$urla[3]][$urla[6]] = $stat['value'];
 				}
-			} else if ($urla[0] == "track_banner_view") {
+			} else if (in_array($urla[0], array("track_banner_view", "track_logo_view"))) {
 				if(isset($agstats['view'][$urla[1]][$urla[5]][$urla[3]][$urla[6]])) {
 						$agstats['view'][$urla[1]][$urla[5]][$urla[3]][$urla[6]] += $stat['value'];
 				} else {

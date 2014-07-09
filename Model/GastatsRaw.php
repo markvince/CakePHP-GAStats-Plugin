@@ -36,7 +36,7 @@ class GastatsRaw extends GastatsAppModel {
 		'webad-events' => array(
 			'metrics' => array('totalEvents'),
 			'dimensions' => array('eventAction'),
-			'filters' => array('eventAction=~^/track_[banner|spotlight]'),
+			'filters' => array('eventAction=~^/track_[banner|spotlight|logo]'),
 			),
 		//-------
 		'webstats' => array(
