@@ -32,6 +32,15 @@ class GastatsAppModel extends AppModel {
 		return "$hour:$min:$sec";
 	}
 
+	public function dayDiff($start, $end) {
+		$days = 0;
+		$start = strtotime($start);
+		$end = strtotime($end);
+		$sec = $end - $start;
+		$days = $sec / 86400;
+		return $days;
+	}
+
 	// TODO: switch to core XML processing
 	public function xml2array($contents, $get_attributes = 1, $priority = 'tag') {
 		if (!function_exists('xml_parser_create')) {

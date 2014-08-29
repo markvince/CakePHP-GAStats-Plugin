@@ -48,6 +48,9 @@ class GastatsWebstat extends GastatsAppModel {
 	 */
 	public function getWebStats($start_date, $end_date) {
 		$conditions = array('start_date >=' =>$start_date, 'end_date <=' => $end_date);
+		if ($this->dayDiff($start_date, $end_date) > 7) {
+			$conditions[] = 'DATEDIFF(end_date, start_date) > 7';
+		}
 		$order = 'metric ASC';
 		$stats_array = $this->find('all', compact('conditions','order'));
 		$stats = array();
