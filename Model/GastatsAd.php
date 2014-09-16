@@ -87,8 +87,8 @@ class GastatsAd extends GastatsAppModel {
 		} else {
 			$conditions = array('corp_id' => $corp_id,'start_date >=' => $start_date,'end_date <=' => $end_date);
 		}
-		if ($this->dayDiff($start_date, $end_date) > 7) {
-			$conditions[] = 'DATEDIFF(end_date, start_date) > 7';
+		if ($this->dayDiff($start_date, $end_date) > 27) {
+			$conditions[] = 'DATEDIFF(end_date, start_date) > 27';
 		}
 		
 		$ads_array = $this->find('all',compact('conditions'));

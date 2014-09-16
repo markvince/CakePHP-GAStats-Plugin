@@ -84,8 +84,8 @@ class GastatsRaw extends GastatsAppModel {
 	*/
 	public function getStats($stat_type=null,$start_date=null,$end_date=null,$key=null) {
 		$conditions = array('stat_type' => $stat_type,'start_date >=' => $start_date,'end_date <=' => $end_date);
-		if ($this->dayDiff($start_date, $end_date) > 7) {
-			$conditions[] = 'DATEDIFF(end_date, start_date) > 7';
+		if ($this->dayDiff($start_date, $end_date) > 27) {
+			$conditions[] = 'DATEDIFF(end_date, start_date) > 27';
 		}
 		if (!empty($key)) {
 			$conditions['GastatsRaw.key'] = $key;
