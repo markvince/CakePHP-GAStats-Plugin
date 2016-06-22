@@ -53,7 +53,15 @@ class GastatsRaw extends GastatsAppModel {
 		'country' => array(
 			'metrics' => array('visits'),
 			'dimensions' => array('country'),
-			)
+			),
+		//-------
+		'videos' => array(
+			//'metrics' => array('totalEvents','avgEventValue'),
+			'metrics' => array('totalEvents'),
+			'dimensions' => array('eventAction','eventLabel','pagePath'),
+			'filters' => array('eventAction=~^/track_video_view-range'),
+			),
+		//-------
 		);
 
 	/**
@@ -197,6 +205,29 @@ class GastatsRaw extends GastatsAppModel {
 						}
 					}
 				}
+			} elseif (strpos($stat_type,'videos') !== false) {
+				//store multiple metrics for specified page path
+				$action_index = $label_index = $page_index = 0;
+				foreach ($response['columnHeaders'] as $header_index => $header) {
+					if ($header['name'] == "ga:eventAction") {
+						$action_index = $header_index;
+					}
+					if ($header['name'] == "ga:eventLabel") {
+						$label_index = $header_index;
+					}
+					if ($header['name'] == "ga:pagePath") {
+						$page_index = $header_index;
+					}
+				}
+				foreach ($response['rows'] as $entry) {
+					foreach ($entry as $col_index => $col_val) {
+						if ($response['columnHeaders'][$col_index]['columnType'] == "METRIC") {
+							$metric = str_replace("ga:", "", $response['columnHeaders'][$col_index]['name']);
+							$metric_key = $entry[$action_index].'|'.$entry[$label_index].'|'.$entry[$page_index].'|'.$metric;
+							$this->stats_data[$stat_type][$metric_key] = $col_val;
+						}
+					}
+				}
 			} elseif ($this->metric_count == 1) {
 				//store single metric value for single dimension
 				foreach ($response['rows'] as $entry) {
@@ -299,6 +330,8 @@ class GastatsRaw extends GastatsAppModel {
 		$GastatsWebchannel->processGAStats($start,$stop,true);
 		echo "Pulling the Webstat stats\n";
 		$GastatsWebstat->processGAStats($start,$stop,true);
+		echo "Pulling the Video stats\n";
+		$GastatsVideo->processGAStats($start,$stop,true);
 		return true;
 	}
 }
