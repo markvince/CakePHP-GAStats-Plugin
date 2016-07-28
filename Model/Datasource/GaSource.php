@@ -136,7 +136,14 @@ class GaSource extends DataSource {
 	public function lookForErrors($response) {
 		if ($response['http_code'] != 200) {
 			//debug($response);
-			throw new OutOfBoundsException("Error: {$response['code']} {$response['message']}");
+			$this->setup();
+			if (!empty($this->config['Gastats']['alert_email'])) {
+				$to = $this->config['Gastats']['alert_email'];
+				$subject = "GA Stats Import Failure";
+				$body = "Error: {$response['http_code']} {$response['message']}";
+				mail($to, $subject, $body);
+			}
+			throw new OutOfBoundsException("Error: {$response['http_code']} {$response['message']}");
 		}
 	}
 
