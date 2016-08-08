@@ -28,7 +28,8 @@ class GastatsVideo extends GastatsAppModel {
 				$path = $key_details[0];
 				$bucket = $key_details[1];
 				$value = $key_details[1];
-				$page = $key_details[2];
+				$page_tmp = explode("?", $key_details[2]); //help remove URL query strings
+				$page = $page_tmp[0];
 				$path_array = explode("/", $path);
 				$track_type = $path_array[1];
 				$view_type = $path_array[2];
