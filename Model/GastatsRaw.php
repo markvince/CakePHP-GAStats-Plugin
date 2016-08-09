@@ -112,6 +112,8 @@ class GastatsRaw extends GastatsAppModel {
 		} elseif ($stat_type == 'all' && $start_date == 'all' && $end_date == 'all') {
 			$this->errors[] = 'Missing authorization.  Stats not purged.';
 			return false;
+		} else if ($stat_type == 'all' && !empty($start_date) && !empty($end_date)) {
+			$conditions = array('start_date' => $start_date, 'end_date' => $end_date);
 		} else {
 			$conditions = array('stat_type'=>$stat_type, 'start_date' => $start_date, 'end_date' => $end_date);
 		}
@@ -319,6 +321,7 @@ class GastatsRaw extends GastatsAppModel {
 		$GastatsCountry = ClassRegistry::init('Gastats.GastatsCountry');
 		$GastatsWebchannel = ClassRegistry::init('Gastats.GastatsWebchannel');
 		$GastatsWebstat = ClassRegistry::init('Gastats.GastatsWebstat');
+		$GastatsVideo = ClassRegistry::init('Gastats.GastatsVideo');
 
 		echo "Pulling the Raw generic stats\n";
 		$this->processGAStats($start, $stop);
