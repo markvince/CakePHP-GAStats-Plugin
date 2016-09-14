@@ -154,6 +154,34 @@ class GastatsAd extends GastatsAppModel {
 		}
 		return ($total_max === 0 ? '' : $total_max);
 	}
+
+	public function validateERMA($start_date, $end_date, $slot='hp_erma') {
+		$ermas = $this->find('all', ['conditions' => ['start_date' => $start_date, 'end_date' => $end_date, 'ad_slot' => $slot]]);
+		$delete_ids = [];
+		$max_views = $max_ad_id = $ad_id = $click_key = $view_key = 0;
+		foreach ($ermas as $erma_key => $erma) {
+			if ($erma['GastatsAd']['ad_stat_type'] == 'view') {
+				if ($erma['GastatsAd']['value'] > $max_views) {
+					$max_views = $erma['GastatsAd']['value'];
+					$delete_ids[] = $max_ad_id;
+					$max_ad_id = $erma['GastatsAd']['id'];
+					$view_key = $erma_key;
+				} else {
+					$delete_ids[] = $erma['GastatsAd']['id'];
+				}
+			} else if ($erma['GastatsAd']['ad_stat_type'] == 'click') {
+				$click_key = $erma_key;
+			}
+		}
+		$this->deleteAll(['GastatsAd.id' => $delete_ids], false);
+		if (isset($ermas[$click_key]['GastatsAd']['ad_id']) && isset($ermas[$view_key]['GastatsAd']['ad_id']) && ($ermas[$click_key]['GastatsAd']['ad_id'] != $ermas[$view_key]['GastatsAd']['ad_id'])) {
+			$ermas[$click_key]['GastatsAd']['ad_id'] = $ermas[$view_key]['GastatsAd']['ad_id'];
+			$data = $ermas[$click_key];
+			$this->create(false);
+			$this->save($data);
+		}
+		
+	}
 	
 	
 }
