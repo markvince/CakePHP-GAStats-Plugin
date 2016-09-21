@@ -100,6 +100,9 @@ class GastatsVideo extends GastatsAppModel {
 					} else {
 						$diff = $prev_viewers - $viewers;
 						$group_views_total += ($diff * $prev_bmax);
+						if ($total_plays == 0) {
+							$total_plays = $viewers;
+						}
 					}
 					$prev_viewers = $viewers;
 					$prev_bmax = $bmax;

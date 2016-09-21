@@ -75,3 +75,26 @@ CREATE TABLE IF NOT EXISTS `gastats_webstats` (
   `value` varchar(64) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
+
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `gastats_videos`
+--
+
+CREATE TABLE IF NOT EXISTS `gastats_videos` (
+  `id` char(36) NOT NULL,
+  `start_date` date NOT NULL,
+  `end_date` date NOT NULL,
+  `corp_id` int(11) NOT NULL,
+  `video_id` int(11) NOT NULL,
+  `details` text NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Indexes for table `gastats_videos`
+--
+ALTER TABLE `gastats_videos`
+  ADD PRIMARY KEY (`id`);
+
