@@ -34,7 +34,7 @@ class GastatsRaw extends GastatsAppModel {
 			'filters' => array('pagePath=~^/track_.*'),
 			),
 		'webad-events' => array(
-			'metrics' => array('totalEvents'),
+			'metrics' => array('totalEvents','uniqueEvents'),
 			'dimensions' => array('eventAction'),
 			'filters' => array('eventAction=~^/track_[banner|spotlight|logo]'),
 			),
@@ -226,6 +226,32 @@ class GastatsRaw extends GastatsAppModel {
 						if ($response['columnHeaders'][$col_index]['columnType'] == "METRIC") {
 							$metric = str_replace("ga:", "", $response['columnHeaders'][$col_index]['name']);
 							$metric_key = $entry[$action_index].'|'.$entry[$label_index].'|'.$entry[$page_index].'|'.$metric;
+							$this->stats_data[$stat_type][$metric_key] = $col_val;
+						}
+					}
+				}
+			} elseif (strpos($stat_type,'webad-events') !== false) {
+				//store multiple metrics for specified event
+				$eventAction_index = $totalEvent_index = $uniqueEvent_index = 0;
+				foreach ($response['columnHeaders'] as $header_index => $header) {
+					if ($header['name'] == "ga:eventAction") {
+						$eventAction_index = $header_index;
+					}
+					if ($header['name'] == "ga:totalEvents") {
+						$totalEvent_index = $header_index;
+					}
+					if ($header['name'] == "ga:uniqueEvents") {
+						$uniqueEvent_index = $header_index;
+					}
+				}
+				foreach ($response['rows'] as $entry) {
+					foreach ($entry as $col_index => $col_val) {
+						if ($response['columnHeaders'][$col_index]['columnType'] == "METRIC") {
+							$metric = str_replace("ga:", "", $response['columnHeaders'][$col_index]['name']);
+							if (strpos($entry[$eventAction_index], "_click") && $metric == 'uniqueEvents') {
+								continue; //skip the unique counts for clicks
+							}
+							$metric_key = $entry[$eventAction_index].'|'.$metric;
 							$this->stats_data[$stat_type][$metric_key] = $col_val;
 						}
 					}

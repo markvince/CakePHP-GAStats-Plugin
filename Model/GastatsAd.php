@@ -27,13 +27,21 @@ class GastatsAd extends GastatsAppModel {
 		//4 - img (type of banner)
 		//5 - 71 (corp_id)
 		//6 - cp_banner_600x154?ref=... (banner slot and page banner was on) 
+
+		//0 - track_spotlight_view
+		//1 - {event_id}
+		//2 = slot (hp_spotlight/ceu_spotlight)
 		$agstats = array();
 		foreach ($stats as $stat) {
 			$stat = $stat['GastatsRaw'];
 			if (stripos($stat['key'], 'track_') === false) {
 				continue;
 			}
-			$url = explode('?',$stat['key']);
+			$stat_key_split = explode('|',$stat['key']);
+			$stat_count_type = (isset($stat_key_split[1]) ? $stat_key_split[1] : 'totalEvents');
+			$metric_view_types = array('totalEvents' => 'view', 'uniqueEvents' => 'unique-view');
+			$metric_view = $metric_view_types[$stat_count_type];
+			$url = explode('?',$stat_key_split[0]);
 			$urla = explode('/',$url[0]);
 			if ($urla[0] == "") {
 				array_shift($urla);
@@ -45,10 +53,26 @@ class GastatsAd extends GastatsAppModel {
 					$agstats['click'][$urla[1]][$urla[5]][$urla[3]][$urla[6]] = $stat['value'];
 				}
 			} else if (in_array($urla[0], array("track_banner_view", "track_logo_view"))) {
-				if(isset($agstats['view'][$urla[1]][$urla[5]][$urla[3]][$urla[6]])) {
-						$agstats['view'][$urla[1]][$urla[5]][$urla[3]][$urla[6]] += $stat['value'];
+				if(isset($agstats[$metric_view][$urla[1]][$urla[5]][$urla[3]][$urla[6]])) {
+						$agstats[$metric_view][$urla[1]][$urla[5]][$urla[3]][$urla[6]] += $stat['value'];
 				} else {
-					$agstats['view'][$urla[1]][$urla[5]][$urla[3]][$urla[6]] = $stat['value'];
+					$agstats[$metric_view][$urla[1]][$urla[5]][$urla[3]][$urla[6]] = $stat['value'];
+				}
+			} else if (in_array($urla[0], array("track_spotlight_view"))) {
+				$corp_id = 0; //will be backfilled later
+				if (isset($agstats[$metric_view]['GEN'][0][$urla[1]][$urla[2]])) {
+					$agstats[$metric_view]['GEN'][$corp_id][$urla[1]][$urla[2]] += $stat['value'];
+				}
+				else {
+					$agstats[$metric_view]['GEN'][$corp_id][$urla[1]][$urla[2]] = $stat['value'];
+				}
+			} else if (in_array($urla[0], array("track_spotlight_click"))) {
+				$corp_id = 0; //will be backfilled later
+				if (isset($agstats['click']['GEN'][0][$urla[1]][$urla[2]])) {
+					$agstats['click']['GEN'][$corp_id][$urla[1]][$urla[2]] += $stat['value'];
+				}
+				else {
+					$agstats['click']['GEN'][$corp_id][$urla[1]][$urla[2]] = $stat['value'];
 				}
 			}
 		}
