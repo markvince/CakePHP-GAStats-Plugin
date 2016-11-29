@@ -105,7 +105,7 @@ class GastatsAd extends GastatsAppModel {
 	/**
 	*
 	*/
-	public function getAds($corp_id=0, $start_date=null, $end_date=null) {
+	public function getAds($corp_id=0, $start_date=null, $end_date=null, $slots = array()) {
 		if ($corp_id == 0) {
 			$conditions = array('start_date >=' => $start_date,'end_date <=' => $end_date);
 		} else {
@@ -121,30 +121,36 @@ class GastatsAd extends GastatsAppModel {
 		//prep data for display
 		foreach ($ads_array as $ad) {
 			$ad = $ad['GastatsAd'];
-			if (isset($ads['unique'][$ad['ad_id']][$ad['location']][$ad['ad_slot']][$ad['ad_stat_type']])){
-				$ads['unique'][$ad['ad_id']][$ad['location']][$ad['ad_slot']][$ad['ad_stat_type']] += $ad['value'];
-			} else {
-				$ads['unique'][$ad['ad_id']][$ad['location']][$ad['ad_slot']][$ad['ad_stat_type']] = $ad['value'];
+			$ad_id = $ad['ad_id'];
+			foreach ($slots as $id_prefix) {
+				if (strpos($ad['ad_slot'], $id_prefix)) {
+					$ad_id = $id_prefix.'-'.$ad_id;
+				}
 			}
-			$corps[$ad['ad_id']] = $ad['corp_id'];
+			if (isset($ads['unique'][$ad_id][$ad['location']][$ad['ad_slot']][$ad['ad_stat_type']])){
+				$ads['unique'][$ad_id][$ad['location']][$ad['ad_slot']][$ad['ad_stat_type']] += $ad['value'];
+			} else {
+				$ads['unique'][$ad_id][$ad['location']][$ad['ad_slot']][$ad['ad_stat_type']] = $ad['value'];
+			}
+			$corps[$ad_id] = $ad['corp_id'];
 			//breakdown
 			//Total by stat type only (click/view)
-			if (isset($ads['group'][$ad['ad_id']][$ad['ad_stat_type']])) {
-				$ads['group'][$ad['ad_id']][$ad['ad_stat_type']]['total'] += $ad['value'];
+			if (isset($ads['group'][$ad_id][$ad['ad_stat_type']])) {
+				$ads['group'][$ad_id][$ad['ad_stat_type']]['total'] += $ad['value'];
 			} else {
-				$ads['group'][$ad['ad_id']][$ad['ad_stat_type']]['total'] = $ad['value'];
-				$ads['group'][$ad['ad_id']]['ad_stat_types'][$ad['ad_stat_type']] = 1;
+				$ads['group'][$ad_id][$ad['ad_stat_type']]['total'] = $ad['value'];
+				$ads['group'][$ad_id]['ad_stat_types'][$ad['ad_stat_type']] = 1;
 			}
 			//Total by location and ad stat type
-			if (isset($ads['group'][$ad['ad_id']][$ad['ad_stat_type']][$ad['location']]['total'])) {
-				$ads['group'][$ad['ad_id']][$ad['ad_stat_type']][$ad['location']]['total'] += $ad['value'];
+			if (isset($ads['group'][$ad_id][$ad['ad_stat_type']][$ad['location']]['total'])) {
+				$ads['group'][$ad_id][$ad['ad_stat_type']][$ad['location']]['total'] += $ad['value'];
 			} else {
-				$ads['group'][$ad['ad_id']][$ad['ad_stat_type']][$ad['location']]['total'] = $ad['value'];
-				$ads['group'][$ad['ad_id']]['ad_locations'][$ad['location']] = 1;
+				$ads['group'][$ad_id][$ad['ad_stat_type']][$ad['location']]['total'] = $ad['value'];
+				$ads['group'][$ad_id]['ad_locations'][$ad['location']] = 1;
 			}
 			
 		}
-		return compact('corp_id','start_date','end_date','ads','corps');
+		return compact('corp_id','start_date','end_date','ads','corps','slots');
 	}
 
 	public function getMaxViewsBySlot($ad_slot='', $start_date=null, $end_date=null) {
