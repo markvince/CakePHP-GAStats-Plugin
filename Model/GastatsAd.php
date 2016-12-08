@@ -91,6 +91,10 @@ class GastatsAd extends GastatsAppModel {
 				}
 			}
 		}
+
+		//DFP Data
+		$this->processDFPTotals($start_date, $end_date);
+		$this->processDFPReach($start_date, $end_date);
 		
 	}
 	
@@ -123,7 +127,7 @@ class GastatsAd extends GastatsAppModel {
 			$ad = $ad['GastatsAd'];
 			$ad_id = $ad['ad_id'];
 			foreach ($slots as $id_prefix) {
-				if (strpos($ad['ad_slot'], $id_prefix)) {
+				if (strpos($ad['ad_slot'], $id_prefix) !== FALSE) {
 					$ad_id = $id_prefix.'-'.$ad_id;
 				}
 			}
@@ -213,6 +217,187 @@ class GastatsAd extends GastatsAppModel {
 		
 	}
 	
+	/*
+	*   Query and store DFP ad data
+	*/
+	public function processDFPTotals($start_date=null, $end_date=null) {
+		if (empty($start_date) || empty($end_date)) {
+			return false;
+		}
+		$path = APP.'Plugin/Gastats/Lib/googleads-php-lib/src';
+		set_include_path(get_include_path() . PATH_SEPARATOR . $path);
+		require_once 'Google/Api/Ads/Dfp/Lib/DfpUser.php';
+		require_once 'Google/Api/Ads/Dfp/Util/v201608/ReportDownloader.php';
+		require_once 'Google/Api/Ads/Dfp/Util/v201608/StatementBuilder.php';
+		require_once 'Google/Api/Ads/Common/Lib/ValidationException.php';
+		require_once 'Google/Api/Ads/Common/Util/OAuth2Handler.php';
+
+		try {
+		  $user = new DfpUser(APP.'Config/dfp-auth.ini');
+		  $reportService = $user->GetService('ReportService', 'v201608');
+		  $networkService = $user->GetService('NetworkService', 'v201608');
+		  $statementBuilder = new StatementBuilder();
+		  
+		  // Create report query.
+		  $reportQuery = new ReportQuery();
+		  //$reportQuery->dimensions = array('ADVERTISER_NAME', 'CREATIVE_SIZE', 'AD_UNIT_NAME', 'PLACEMENT_NAME', 'MONTH_AND_YEAR');
+		  $reportQuery->dimensions = array('ADVERTISER_NAME', 'AD_UNIT_NAME', 'PLACEMENT_NAME');
+		  $reportQuery->columns = array('TOTAL_INVENTORY_LEVEL_IMPRESSIONS', 'TOTAL_INVENTORY_LEVEL_CLICKS', 'TOTAL_INVENTORY_LEVEL_CTR');
+
+		  // Set the filter statement.
+		  $reportQuery->statement = $statementBuilder->ToStatement();
+
+		  // Set the ad unit view to hierarchical.
+		  $reportQuery->adUnitView = 'TOP_LEVEL';
+		  $reportQuery->dateRangeType = 'CUSTOM_DATE';
+ 		  $reportQuery->startDate = DateTimeUtils::ToDfpDateTime(new DateTime($start_date, new DateTimeZone('America/New_York')))->date;
+ 		  $reportQuery->endDate = DateTimeUtils::ToDfpDateTime(new DateTime($end_date, new DateTimeZone('America/New_York')))->date;
+
+		  // Create report job.
+		  $reportJob = new ReportJob();
+		  $reportJob->reportQuery = $reportQuery;
+
+		  // Run report job.
+		  $reportJob = $reportService->runReportJob($reportJob);
+
+		  // Create report downloader.
+		  $reportDownloader = new ReportDownloader($reportService, $reportJob->id);
+
+		  // Wait for the report to be ready.
+		  $reportDownloader->waitForReportReady();
+
+		  // Change to your file location.
+		  $csv_path = APP.'tmp/dfp-'.$start_date.'_'.$end_date.'-historical';
+		  $filePath = sprintf('%s.csv.gz', $csv_path);
+		  //$reportDownloader->downloadReport('CSV_DUMP', $filePath);
+		  $result = gzdecode($reportDownloader->downloadReport('CSV_DUMP'));
+		  $result_array = explode("\n", $result);
+
+		  $result_keys = array_flip(explode(",", $result_array[0]));
+		  unset($result_array[0]);
+		  foreach ($result_array as $result_row) {
+		  	if (empty(trim($result_row))) {
+		  		continue;
+		  	}
+		  	$row_array = explode(",", $result_row);
+		  	$data = [
+		  		'start_date' => $start_date,
+		  		'end_date' =>$end_date,
+		  		'ad_stat_type' => 'view',
+		  		'location' => 'GEN',
+		  		'corp_id' => $row_array[$result_keys['Dimension.ADVERTISER_ID']],
+		  		'ad_id' => $row_array[$result_keys['Dimension.AD_UNIT_ID']],
+		  		'ad_slot' => $row_array[$result_keys['Dimension.AD_UNIT_NAME']],
+		  		'value' => $row_array[$result_keys['Column.TOTAL_INVENTORY_LEVEL_IMPRESSIONS']],
+		  		];
+
+			$this->create(false);
+			$this->save($data);
+			//Clicks
+			$data['ad_stat_type'] = 'click';
+			$data['value'] = $row_array[$result_keys['Column.TOTAL_INVENTORY_LEVEL_CLICKS']];
+			$this->create(false);
+			$this->save($data);
+		  }
+
+		  printf("done.\n");
+		} catch (OAuth2Exception $e) {
+		  ExampleUtils::CheckForOAuth2Errors($e);
+		} catch (ValidationException $e) {
+		  ExampleUtils::CheckForOAuth2Errors($e);
+		} catch (Exception $e) {
+		  printf("%s\n", $e->getMessage());
+		}
+	}
+
+	/*
+	*   Query and store DFP ad data
+	*/
+	public function processDFPReach($start_date=null, $end_date=null) {
+		if (empty($start_date) || empty($end_date)) {
+			return false;
+		}
+		$path = APP.'Plugin/Gastats/Lib/googleads-php-lib/src';
+		set_include_path(get_include_path() . PATH_SEPARATOR . $path);
+		require_once 'Google/Api/Ads/Dfp/Lib/DfpUser.php';
+		require_once 'Google/Api/Ads/Dfp/Util/v201608/ReportDownloader.php';
+		require_once 'Google/Api/Ads/Dfp/Util/v201608/StatementBuilder.php';
+		require_once 'Google/Api/Ads/Common/Lib/ValidationException.php';
+		require_once 'Google/Api/Ads/Common/Util/OAuth2Handler.php';
+
+		try {
+		  $user = new DfpUser(APP.'Config/dfp-auth.ini');
+		  $reportService = $user->GetService('ReportService', 'v201608');
+		  $networkService = $user->GetService('NetworkService', 'v201608');
+		  $statementBuilder = new StatementBuilder();
+		  
+		  // Create report query.
+		  $reportQuery = new ReportQuery();
+		  //$reportQuery->dimensions = array('ADVERTISER_NAME', 'CREATIVE_SIZE', 'AD_UNIT_NAME', 'PLACEMENT_NAME', 'MONTH_AND_YEAR');
+		  $reportQuery->dimensions = array('ADVERTISER_NAME');
+		  $reportQuery->columns = array('REACH');
+
+		  // Set the filter statement.
+		  $reportQuery->statement = $statementBuilder->ToStatement();
+
+		  // Set the ad unit view to hierarchical.
+		  $reportQuery->adUnitView = 'TOP_LEVEL';
+		  $reportQuery->dateRangeType = 'CUSTOM_DATE';
+ 		  $reportQuery->startDate = DateTimeUtils::ToDfpDateTime(new DateTime($start_date, new DateTimeZone('America/New_York')))->date;
+ 		  $reportQuery->endDate = DateTimeUtils::ToDfpDateTime(new DateTime($end_date, new DateTimeZone('America/New_York')))->date;
+
+		  // Create report job.
+		  $reportJob = new ReportJob();
+		  $reportJob->reportQuery = $reportQuery;
+
+		  // Run report job.
+		  $reportJob = $reportService->runReportJob($reportJob);
+
+		  // Create report downloader.
+		  $reportDownloader = new ReportDownloader($reportService, $reportJob->id);
+
+		  // Wait for the report to be ready.
+		  $reportDownloader->waitForReportReady();
+
+		  // Change to your file location.
+		  $csv_path = APP.'tmp/dfp-'.$start_date.'_'.$end_date.'-reach';
+		  $filePath = sprintf('%s.csv.gz', $csv_path);
+		  //$reportDownloader->downloadReport('CSV_DUMP', $filePath);
+		  $result = gzdecode($reportDownloader->downloadReport('CSV_DUMP'));
+
+		  $result_array = explode("\n", $result);
+
+		  $result_keys = array_flip(explode(",", $result_array[0]));
+		  unset($result_array[0]);
+		  foreach ($result_array as $result_row) {
+		  	if (empty(trim($result_row))) {
+		  		continue;
+		  	}
+		  	$row_array = explode(",", $result_row);
+		  	$data = [
+		  		'start_date' => $start_date,
+		  		'end_date' =>$end_date,
+		  		'ad_stat_type' => 'unique-view',
+		  		'location' => 'GEN',
+		  		'corp_id' => $row_array[$result_keys['Dimension.ADVERTISER_ID']],
+		  		'ad_id' => '1',//$row_array[$result_keys['Dimension.AD_UNIT_ID']],
+		  		'ad_slot' => 'dfp-reach',//$row_array[$result_keys['Dimension.AD_UNIT_NAME']],
+		  		'value' => $row_array[$result_keys['Column.REACH']],
+		  		];
+
+			$this->create(false);
+			$this->save($data);
+		  }
+
+		  printf("done.\n");
+		} catch (OAuth2Exception $e) {
+		  ExampleUtils::CheckForOAuth2Errors($e);
+		} catch (ValidationException $e) {
+		  ExampleUtils::CheckForOAuth2Errors($e);
+		} catch (Exception $e) {
+		  printf("%s\n", $e->getMessage());
+		}
+	}
 	
 }
 ?>
