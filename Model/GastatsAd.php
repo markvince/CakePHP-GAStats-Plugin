@@ -302,9 +302,9 @@ class GastatsAd extends GastatsAppModel {
 
 		  printf("done.\n");
 		} catch (OAuth2Exception $e) {
-		  ExampleUtils::CheckForOAuth2Errors($e);
+		  //ExampleUtils::CheckForOAuth2Errors($e);
 		} catch (ValidationException $e) {
-		  ExampleUtils::CheckForOAuth2Errors($e);
+		  //ExampleUtils::CheckForOAuth2Errors($e);
 		} catch (Exception $e) {
 		  printf("%s\n", $e->getMessage());
 		}
@@ -391,9 +391,9 @@ class GastatsAd extends GastatsAppModel {
 
 		  printf("done.\n");
 		} catch (OAuth2Exception $e) {
-		  ExampleUtils::CheckForOAuth2Errors($e);
+		  //ExampleUtils::CheckForOAuth2Errors($e);
 		} catch (ValidationException $e) {
-		  ExampleUtils::CheckForOAuth2Errors($e);
+		  //ExampleUtils::CheckForOAuth2Errors($e);
 		} catch (Exception $e) {
 		  printf("%s\n", $e->getMessage());
 		}

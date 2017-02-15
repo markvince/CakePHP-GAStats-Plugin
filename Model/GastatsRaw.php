@@ -267,7 +267,7 @@ class GastatsRaw extends GastatsAppModel {
 						}
 					}
 					if (isset($this->stats_data[$stat_type][$key])) {
-						$this->stats_data[$stat_type][$key] = $this->stats_data[$key] + $value;
+						$this->stats_data[$stat_type][$key] = $this->stats_data[$stat_type][$key] + $value;
 					} else {
 						$this->stats_data[$stat_type][$key] = $value;
 					}
