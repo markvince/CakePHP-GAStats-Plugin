@@ -143,12 +143,12 @@ class GastatsVideo extends GastatsAppModel {
 
 	function getVideos($corp_id=0, $start_date=null, $end_date=null) {
 		if ($corp_id == 0) {
-			$conditions = array('start_date >=' => $start_date,'end_date <=' => $end_date);
+			$conditions = ['OR' => $this->calculateDateRanges($start_date, $end_date)];
 		} else {
-			$conditions = array('corp_id' => $corp_id,'start_date >=' => $start_date,'end_date <=' => $end_date);
-		}
-		if ($this->dayDiff($start_date, $end_date) > 27) {
-			$conditions[] = 'DATEDIFF(end_date, start_date) >= 27';
+			$conditions = [
+				'corp_id' => $corp_id,
+				'OR' => $this->calculateDateRanges($start_date, $end_date),
+				];
 		}
 		$video_array = $this->find('all', compact('conditions'));
 

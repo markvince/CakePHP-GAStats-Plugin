@@ -41,6 +41,64 @@ class GastatsAppModel extends AppModel {
 		return $days;
 	}
 
+	/*
+	*  Given a date range return a list of per month ranges to query for
+	*  2017-01-01 to 2017-02-28 would return [['start_date' => '2017-01-01', 'end_date' => '2017-01-31'], ['start_date' => '2017-02-01', 'end_date' => '2017-02-28']]
+	*/
+	public function calculateDateRanges($start_date, $end_date) 
+	{
+		$start_year = date('Y', strtotime($start_date));
+		$start_month = date('n', strtotime($start_date));
+		$end_year = date('Y', strtotime($end_date));
+		$end_month = date('n', strtotime($end_date));
+		$end_day = date('d', strtotime($end_date));
+		$ranges = [];
+
+		if ($start_year > $end_year) {
+			throw new Exception();
+		}
+		if ($start_year == $end_year) {
+			//Within same year
+			if ($start_month > $end_month) {
+				throw new Exception();
+			}
+			for ($m = $start_month; $m <= $end_month; $m++) {
+				$month = str_pad($m, 2, "0", STR_PAD_LEFT);
+				$start = "$start_year-$month-01";
+				$end = ($m == $end_month ? date('Y-m-d', strtotime("$start_year-$month-$end_day")) : date('Y-m-t', strtotime($start))); //need last month to have $end_day
+				$ranges[] = ['start_date' => $start, 'end_date' => $end];
+			}
+
+		} else {
+			//Spanning Years
+			//first/partial year
+			for ($m = $start_month; $m <= 12; $m++) {
+				$month = str_pad($m, 2, "0", STR_PAD_LEFT);
+				$start = "$start_year-$month-01";
+				$end = date('Y-m-t', strtotime($start));
+				$ranges[] = ['start_date' => $start, 'end_date' => $end];
+			}
+			//2nd year to last year - 1
+			for ($y = $start_year+1; $y < $end_year; $y++ ) {
+				for ($m = 1; $m < 12; $m++) {
+					$month = str_pad($m, 2, "0", STR_PAD_LEFT);
+					$start = "$y-$month-01";
+					$end = date('Y-m-t', strtotime($start));
+					$ranges[] = ['start_date' => $start, 'end_date' => $end];
+				}
+			}
+			//last/partial year
+			for ($m = 1; $m <= $end_month; $m++) {
+      			$month = str_pad($m, 2, "0", STR_PAD_LEFT);
+				$start = "$end_year-$month-01";
+				$end = date('Y-m-t', strtotime($start));
+				$ranges[] = ['start_date' => $start, 'end_date' => $end];
+			}
+		}
+		return $ranges;
+	}
+	
+
 	// TODO: switch to core XML processing
 	public function xml2array($contents, $get_attributes = 1, $priority = 'tag') {
 		if (!function_exists('xml_parser_create')) {

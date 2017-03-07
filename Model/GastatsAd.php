@@ -111,14 +111,14 @@ class GastatsAd extends GastatsAppModel {
 	*/
 	public function getAds($corp_id=0, $start_date=null, $end_date=null, $slots = array()) {
 		if ($corp_id == 0) {
-			$conditions = array('start_date >=' => $start_date,'end_date <=' => $end_date);
+			$conditions = ['OR' => $this->calculateDateRanges($start_date, $end_date)];
 		} else {
-			$conditions = array('corp_id' => $corp_id,'start_date >=' => $start_date,'end_date <=' => $end_date);
-		}
-		if ($this->dayDiff($start_date, $end_date) > 27) {
-			$conditions[] = 'DATEDIFF(end_date, start_date) >= 27';
-		}
-		
+			$conditions = [
+				'corp_id' => $corp_id,
+				'OR' => $this->calculateDateRanges($start_date, $end_date),
+			];
+
+		}		
 		$ads_array = $this->find('all',compact('conditions'));
 		$ads = array();
 		$corps=array();
