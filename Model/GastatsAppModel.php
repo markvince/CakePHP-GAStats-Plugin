@@ -80,7 +80,7 @@ class GastatsAppModel extends AppModel {
 			}
 			//2nd year to last year - 1
 			for ($y = $start_year+1; $y < $end_year; $y++ ) {
-				for ($m = 1; $m < 12; $m++) {
+				for ($m = 1; $m <= 12; $m++) {
 					$month = str_pad($m, 2, "0", STR_PAD_LEFT);
 					$start = "$y-$month-01";
 					$end = date('Y-m-t', strtotime($start));
