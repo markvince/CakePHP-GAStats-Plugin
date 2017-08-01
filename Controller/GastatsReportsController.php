@@ -13,6 +13,8 @@ class GastatsReportsController extends GastatsAppController {
 			'uniquePageviews' => array('display'=>true,'header' => 'Unique Page Views',),
 			'avgTimeOnSite' => array('display'=>true,'header' => 'Avg Time On Site (h:m:s)','uom'=>'time'),
 			'timeOnSite' => array('display'=>false,'header' => 'Time On Site (h:m:s)','uom'=>'time'),
+			'avgSessionDuration' => array('display'=>true,'header' => 'Avg Time On Site (h:m:s)','uom'=>'time'),
+			'sessionDuration' => array('display'=>false,'header' => 'Time On Site (h:m:s)','uom'=>'time'),
 			'visitors' => array('display'=>true,'header' => 'Visitors',),
 			'visits' => array('display'=>true,'header' => 'Visits',),
 			);

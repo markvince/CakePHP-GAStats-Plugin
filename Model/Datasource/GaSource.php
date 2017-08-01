@@ -136,7 +136,7 @@ class GaSource extends DataSource {
 	public function lookForErrors($response) {
 		if ($response['http_code'] != 200) {
 			//debug($response);
-			throw new OutOfBoundsException("Error: {$response['code']} {$response['message']}");
+			throw new OutOfBoundsException("Error: {$response['error']['code']} {$response['error']['message']}");
 		}
 	}
 

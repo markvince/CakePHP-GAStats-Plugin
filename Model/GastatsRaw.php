@@ -40,7 +40,7 @@ class GastatsRaw extends GastatsAppModel {
 			),
 		//-------
 		'webstats' => array(
-			'metrics' => array('pageviews','visitors','visits','timeOnSite', 'avgTimeOnSite'),
+			'metrics' => array('pageviews','visitors','visits','sessionDuration', 'avgSessionDuration'),
 			'dimensions' => array('year'),
 			),
 		//-------

@@ -12,6 +12,8 @@ class GastatsAppModel extends AppModel {
 			'uniquePageviews' => array('display'=>true,'header' => 'Unique Page Views',),
 			'avgTimeOnSite' => array('display'=>true,'header' => 'Avg Time On Site','uom'=>'time'),
 			'timeOnSite' => array('display'=>false,'header' => 'Time On Site','uom'=>'time'),
+			'avgSessionDuration' => array('display'=>true,'header' => 'Avg Time On Site','uom'=>'time'),
+			'sessionDuration' => array('display'=>false,'header' => 'Time On Site','uom'=>'time'),
 			'visitors' => array('display'=>true,'header' => 'Visitors',),
 			'visits' => array('display'=>true,'header' => 'Visits',),
 			);
