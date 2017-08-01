@@ -19,7 +19,7 @@ class GastatsVideo extends GastatsAppModel {
 			$this->purgeVideoStats($start_date, $end_date);
 		}
 		$stats = $GastatsRaw->getStats($this->stats_type,$start_date,$end_date);
-		$video_corp_ids = array();
+		$video_corp_ids = $videos = array();
 		foreach ($stats as $stat) {
 			$stat = $stat['GastatsRaw'];
 			$key_details = explode("|", $stat['key']);
