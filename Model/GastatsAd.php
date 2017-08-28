@@ -334,7 +334,7 @@ class GastatsAd extends GastatsAppModel {
 		  // Create report query.
 		  $reportQuery = new ReportQuery();
 		  //$reportQuery->dimensions = array('ADVERTISER_NAME', 'CREATIVE_SIZE', 'AD_UNIT_NAME', 'PLACEMENT_NAME', 'MONTH_AND_YEAR');
-		  $reportQuery->dimensions = array('ADVERTISER_NAME');
+		  $reportQuery->dimensions = array('ADVERTISER_NAME', 'MONTH_AND_YEAR');
 		  $reportQuery->columns = array('REACH');
 
 		  // Set the filter statement.
