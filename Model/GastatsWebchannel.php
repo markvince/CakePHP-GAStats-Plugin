@@ -4,7 +4,7 @@ Class GastatsWebchannel extends GastatsAppModel {
 	public $name = "GastatsWebchannel";
 	public $useTable = "gastats_webchannels";
 	public $stat_type = 'webchannels';
-	public $channel_prefix = 'expo';
+	public $channel_prefix = ['expo', 'partners'];
 	
 	public function processGAStats($start_date=null, $end_date=null, $refresh=false) {
 		$stat_type = $this->stat_type;
@@ -27,13 +27,17 @@ Class GastatsWebchannel extends GastatsAppModel {
 					$conditions[] = $is_active;
 			}
 			$channels = $CM->find('list',compact('conditions','fields'));
+			$channels_by_path = array_flip($channels);
 			if ($refresh) {
 				$GastatsRaw->purgeStats($stat_type,$start_date,$end_date); //remove data collected from GA
 				$this->purgeWebchannelStats($start_date,$end_date);			//remove aggregate data
 				foreach ($channels as $corp_id => $channel) {
-					$GastatsRaw->page_path = $this->channel_prefix.'/'.$channel;
-					$channels[$corp_id] = $GastatsRaw->page_path;
-					$GastatsRaw->getGAData($stat_type,$start_date,$end_date,true);
+					foreach ($this->channel_prefix as $prefix) {
+						$GastatsRaw->page_path = $prefix.'/'.$channel;
+						$channels[$prefix][$corp_id] = $GastatsRaw->page_path;
+						$channels_by_path[$GastatsRaw->page_path] = $corp_id;
+						$GastatsRaw->getGAData($stat_type,$start_date,$end_date,true);
+					}
 				}
 			}
 			
@@ -44,8 +48,8 @@ Class GastatsWebchannel extends GastatsAppModel {
 				$stat = $stat['GastatsRaw'];
 				$data = array();
 				$channel_metric = explode("|",$stat['key']); //channel|metric
-				$corp_id = array_keys($channels, $channel_metric[0]);
-				$corp_id = (is_array($corp_id) && count($corp_id) > 0 ? $corp_id[0] : 0);
+				$corp_id = $channels_by_path[$channel_metric[0]];
+				$corp_id = empty($corp_id) ? 0 : $corp_id;
 				if ($corp_id > 0) {
 					$data = array(
 					'start_date' => $start_date,
