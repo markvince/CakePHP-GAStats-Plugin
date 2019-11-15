@@ -351,16 +351,34 @@ class GastatsRaw extends GastatsAppModel {
 
 		echo "Pulling the Raw generic stats\n";
 		$this->processGAStats($start, $stop);
+
 		echo "Pulling the Ad stats\n";
+        $GastatsAd->loadGA();
+        $GastatsAd->GoogleAnalytics->reAuth();
 		$GastatsAd->processGAStats($start,$stop,true);
+
 		echo "Pulling the Country stats\n";
+        $GastatsCountry->loadGA();
+        $GastatsCountry->GoogleAnalytics->reAuth();
 		$GastatsCountry->processGAStats($start,$stop,true);
+
+
 		echo "Pulling the Webchannel stats\n";
+        // We get as far as here ...
+        $GastatsWebchannel->loadGA();
+        $GastatsWebchannel->GoogleAnalytics->reAuth();
 		$GastatsWebchannel->processGAStats($start,$stop,true);
+
 		echo "Pulling the Webstat stats\n";
+        $GastatsWebstat->loadGA();
+        $GastatsWebstat->GoogleAnalytics->reAuth();
 		$GastatsWebstat->processGAStats($start,$stop,true);
+
 		echo "Pulling the Video stats\n";
+        $GastatsVideo->loadGA();
+        $GastatsVideo->GoogleAnalytics->reAuth();
 		$GastatsVideo->processGAStats($start,$stop,true);
+
 		return true;
 	}
 }

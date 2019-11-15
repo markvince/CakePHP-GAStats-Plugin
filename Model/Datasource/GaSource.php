@@ -85,6 +85,16 @@ class GaSource extends DataSource {
 		$this->ga->setDefaultQueryParams($defaults);
 	}
 
+   /**
+    * Refresh token. Called prior to performing each Gastat import, to prevent the token expiring part-way through.
+    */
+    public function reAuth() {
+        $this->setup();
+        $this->authkey = null;
+        $this->auth();
+        return !empty($this->authkey);
+    }
+
 	/**
 	 * Print out the Accounts with Id => Name.
 	 */
