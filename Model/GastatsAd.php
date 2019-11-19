@@ -93,8 +93,8 @@ class GastatsAd extends GastatsAppModel {
 		}
 
 		//DFP Data
-		$this->processDFPTotals($start_date, $end_date);
-		$this->processDFPReach($start_date, $end_date);
+		//$this->processDFPTotals($start_date, $end_date);
+		//$this->processDFPReach($start_date, $end_date);
 		
 	}
 	
