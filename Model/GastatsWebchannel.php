@@ -7,6 +7,7 @@ Class GastatsWebchannel extends GastatsAppModel {
 	public $channel_prefix = ['expo', 'partners'];
 	
 	public function processGAStats($start_date=null, $end_date=null, $refresh=false) {
+		AppLog::info('Gastats - Processing Webchannel Stats');
 		$stat_type = $this->stat_type;
 		$GastatsRaw = ClassRegistry::init('Gastats.GastatsRaw');
 		$GastatsRaw->page_path='';
@@ -69,7 +70,8 @@ Class GastatsWebchannel extends GastatsAppModel {
 				}
 				
 			}
-		}			
+		}
+		AppLog::info('Gastats - Processing Webchannel Stats Complete');
 	}
 	
 	function purgeWebchannelStats($start_date,$end_date) {

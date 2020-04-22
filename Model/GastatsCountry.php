@@ -11,6 +11,7 @@ class GastatsCountry extends GastatsAppModel {
 	 *
 	 */
 	public function processGAStats($start_date=null, $end_date=null, $refresh=false) {
+		AppLog::info('Gastats - Processing Country Stats');
 		$GastatsRaw = ClassRegistry::init('Gastats.GastatsRaw');
 		$GastatsRaw->page_path='';
 		if ($refresh) {
@@ -29,6 +30,8 @@ class GastatsCountry extends GastatsAppModel {
 			$this->create();
 			$this->save($data);
 		}
+
+		AppLog::info('Gastats - Processing Country Stats Complete');
 	}
 
 	/**
