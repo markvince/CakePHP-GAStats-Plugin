@@ -137,21 +137,28 @@ class GaSource extends DataSource {
 	 *
 	 */
 	public function query($params) {
+		$maxAttempts = 3;
 		$this->setup();
 		AppLog::info('Gastats Query: ' . json_encode($params));
 		$response = $this->ga->query($params);
-		$this->lookForErrors($response);
+		$attempt = 1;
+		while ($this->lookForErrors($response) && ($attempt < $maxAttempts)) {
+			$response = $this->ga->query($params);
+			$attempt++;
+		}
 		return $response;
 	}
 
 	/**
-	 *
+	 *	Return true if an error is found.  Return false if an error is not found
+	 *	@return bool
 	 */
 	public function lookForErrors($response) {
 		if ($response['http_code'] != 200) {
 			AppLog::error('Gastats Error: ' . json_encode($response));
-			throw new OutOfBoundsException("Error: {$response['error']['code']} {$response['error']['message']}");
+			return true;
 		}
+		return false;
 	}
 
 
