@@ -11,6 +11,7 @@ class GastatsWebstat extends GastatsAppModel {
 	 *
 	 */
 	public function processGAStats($start_date=null, $end_date=null, $refresh=false) {
+		AppLog::info('Gastats - Processing Webstat Stats');
 		$GastatsRaw = ClassRegistry::init('Gastats.GastatsRaw');
 		$GastatsRaw->page_path='';
 		if ($refresh) {
@@ -31,6 +32,7 @@ class GastatsWebstat extends GastatsAppModel {
 			$this->create();
 			$this->save($data);
 		}
+		AppLog::info('Gastats - Processing Webstat Stats Complete');
 	}
 
 	/**

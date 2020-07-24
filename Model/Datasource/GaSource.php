@@ -71,11 +71,14 @@ class GaSource extends DataSource {
 		$this->ga->auth->setPrivateKey($this->config['auth']['privateKey']); // Path to the .p12 file
 		$auth = $this->ga->auth->getAccessToken();
 		if ($auth['http_code'] != 200) {
+			AppLog::error('Gastats Auth Failure - Bad Response: ' . json_encode($auth));
 			throw new OutOfBoundsException('Unable to get googleAnalytics auth - bad response');
 		}
 		if (empty($auth['access_token'])) {
+			AppLog::error('Gastats Auth Failure - Empty Access Token: ' . json_encode($auth));
 			throw new OutOfBoundsException('Unable to get googleAnalytics auth - empty access_token');
 		}
+		AppLog::info('Gastats Auth Token Success');
 		$this->ga->setAccessToken($auth['access_token']);
 		$this->ga->setAccountId($this->config['defaults']['accountId']);
 		$this->authkey = $auth['access_token'];
@@ -84,6 +87,16 @@ class GaSource extends DataSource {
 		unset($defaults['accountId']);
 		$this->ga->setDefaultQueryParams($defaults);
 	}
+
+   /**
+    * Refresh token. Called prior to performing each Gastat import, to prevent the token expiring part-way through.
+    */
+    public function reAuth() {
+        $this->setup();
+        $this->authkey = null;
+        $this->auth();
+        return !empty($this->authkey);
+    }
 
 	/**
 	 * Print out the Accounts with Id => Name.
@@ -124,20 +137,36 @@ class GaSource extends DataSource {
 	 *
 	 */
 	public function query($params) {
+		$maxAttempts = 3;
 		$this->setup();
+		AppLog::info('Gastats Query: ' . json_encode($params));
 		$response = $this->ga->query($params);
-		$this->lookForErrors($response);
+		$attempt = 1;
+		$error = $this->lookForErrors($response);
+		$retryAllowed = ($attempt < $maxAttempts);
+		while ($error && $retryAllowed) {
+			AppLog::info('Gastats Query Retry: ' . json_encode($params));
+			$response = $this->ga->query($params);
+			$attempt++;
+			$error = $this->lookForErrors($response);
+			$retryAllowed = ($attempt < $maxAttempts);
+		}
+		if ($error) {
+			throw new OutOfBoundsException("Error: {$response['error']['code']} {$response['error']['message']}");
+		}
 		return $response;
 	}
 
 	/**
-	 *
+	 *	Return true if an error is found.  Return false if an error is not found
+	 *	@return bool
 	 */
 	public function lookForErrors($response) {
-		if ($response['http_code'] != 200) {
-			//debug($response);
-			throw new OutOfBoundsException("Error: {$response['error']['code']} {$response['error']['message']}");
+		if (empty($response['http_code']) || ($response['http_code'] != 200)) {
+			AppLog::error('Gastats Error: ' . json_encode($response));
+			return true;
 		}
+		return false;
 	}
 
 

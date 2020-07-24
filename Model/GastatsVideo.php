@@ -12,6 +12,7 @@ class GastatsVideo extends GastatsAppModel {
 	*
 	*/
 	public function processGAStats($start_date=null, $end_date=null, $refresh=false) {
+		AppLog::info('Gastats - Processing Video Stats');
 		$GastatsRaw = ClassRegistry::init('Gastats.GastatsRaw');
 		$GastatsRaw->page_path='';		
 		if ($refresh) {
@@ -130,6 +131,7 @@ class GastatsVideo extends GastatsAppModel {
 				$this->save($data);
 			}
 		}
+		AppLog::info('Gastats - Processing Video Stats Complete');
 	}
 	
 	/**

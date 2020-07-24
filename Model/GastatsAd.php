@@ -13,6 +13,7 @@ class GastatsAd extends GastatsAppModel {
 	*
 	*/
 	public function processGAStats($start_date=null, $end_date=null, $refresh=false) {
+		AppLog::info('Gastats - Processing Ad Stats');
 		$GastatsRaw = ClassRegistry::init('Gastats.GastatsRaw');
 		$GastatsRaw->page_path='';		
 		if ($refresh) {
@@ -93,8 +94,10 @@ class GastatsAd extends GastatsAppModel {
 		}
 
 		//DFP Data
-		$this->processDFPTotals($start_date, $end_date);
-		$this->processDFPReach($start_date, $end_date);
+		//$this->processDFPTotals($start_date, $end_date);
+		//$this->processDFPReach($start_date, $end_date);
+
+		AppLog::info('Gastats - Processing Ad Stats Complete');
 		
 	}
 	

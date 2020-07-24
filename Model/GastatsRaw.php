@@ -81,6 +81,7 @@ class GastatsRaw extends GastatsAppModel {
 	*/
 	public function processGAStats($start_date=null,$end_date=null) {
 		//run defaults
+		AppLog::info('Gastats - Processing Raw Stats');
 		$this->page_path='';
 		$this->purgeStats($this->stat_type, $start_date, $end_date);
 		return $this->getGAData($this->stat_type, $start_date, $end_date, true);
@@ -149,7 +150,8 @@ class GastatsRaw extends GastatsAppModel {
 					$page_count = 1;
 					if ($paginate && ($num_entries == $options['max-results'])) {
 						$start_index = 1; //default
-						echo "Pulled page $page_count with $num_entries results.";
+						echo "Pulled page $page_count with $num_entries results.\n";
+						AppLog::info('Gastats results page '. $page_count .': ' . $num_entries . ' results');
 						//Loop until no more data
 						while (isset($response['rows']) && count($response['rows']) > 0) {
 							$start_index += $options['max-results'];
@@ -159,8 +161,11 @@ class GastatsRaw extends GastatsAppModel {
 							$response = $this->GoogleAnalytics->report($options);
 							if (isset($response['rows']) && is_array($response['rows'])) {
 								$num_entries =  count($response['rows']);
-								echo "Pulled page $page_count with $num_entries results.";
+								echo "Pulled page $page_count with $num_entries results.\n";
+								AppLog::info('Gastats results page '. $page_count .': ' . $num_entries . ' results');
 								$this->storeGAData($response,$stat_type,$start_date,$end_date);
+							} else if (!empty($response['totalResults'])) {
+								AppLog::info('Gastats total raw results: '. $response['totalResults']);
 							}
 						}
 					}
@@ -351,16 +356,33 @@ class GastatsRaw extends GastatsAppModel {
 
 		echo "Pulling the Raw generic stats\n";
 		$this->processGAStats($start, $stop);
+
 		echo "Pulling the Ad stats\n";
+		$GastatsAd->loadGA();
+		$GastatsAd->GoogleAnalytics->reAuth();
 		$GastatsAd->processGAStats($start,$stop,true);
+
 		echo "Pulling the Country stats\n";
+		$GastatsCountry->loadGA();
+		$GastatsCountry->GoogleAnalytics->reAuth();
 		$GastatsCountry->processGAStats($start,$stop,true);
+
+
 		echo "Pulling the Webchannel stats\n";
+		$GastatsWebchannel->loadGA();
+		$GastatsWebchannel->GoogleAnalytics->reAuth();
 		$GastatsWebchannel->processGAStats($start,$stop,true);
+
 		echo "Pulling the Webstat stats\n";
+		$GastatsWebstat->loadGA();
+		$GastatsWebstat->GoogleAnalytics->reAuth();
 		$GastatsWebstat->processGAStats($start,$stop,true);
+
 		echo "Pulling the Video stats\n";
+		$GastatsVideo->loadGA();
+		$GastatsVideo->GoogleAnalytics->reAuth();
 		$GastatsVideo->processGAStats($start,$stop,true);
+
 		return true;
 	}
 }
